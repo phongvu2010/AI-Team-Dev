@@ -132,12 +132,26 @@ pip install -e ".[dev]"
 npm --prefix src/frontend install
 ```
 
-### 2.4. Khởi chạy Database PostgreSQL (Tuỳ chọn)
-Khi cần phát triển hoặc chạy server live với cơ sở dữ liệu thật:
-```bash
-docker compose up -d postgres
-```
-*(Lưu ý: Bộ test tự động mặc định sử dụng SQLite async in-memory, do đó bạn không nhất thiết phải bật Docker PostgreSQL chỉ để chạy test).*
+### 2.4. Khởi chạy Ứng dụng Bằng Docker (Tuỳ chọn)
+
+Hệ thống cung cấp sẵn 2 chế độ Docker linh hoạt:
+
+* **Chế độ 1 — Chạy Full-Stack 1-Click (Khuyên dùng khi demo, review hoặc staging)**:
+  Khởi chạy trọn vẹn cả 3 tầng (PostgreSQL 16, FastAPI Backend và Next.js 15 Frontend) trong cùng mạng nội bộ:
+  ```bash
+  docker compose up --build -d
+  ```
+  - Frontend Web UI: `http://localhost:3000`
+  - FastAPI Swagger Docs: `http://localhost:8000/docs`
+  - Backend Health Check: `http://localhost:8000/health`
+  - PostgreSQL Port: `localhost:5432`
+
+* **Chế độ 2 — Chỉ chạy PostgreSQL Container (Dành cho Dev lập trình trên máy host)**:
+  Khi bạn muốn dev trực tiếp qua Python virtualenv và npm trên máy host:
+  ```bash
+  docker compose up -d postgres
+  ```
+  *(Lưu ý: Bộ test tự động mặc định sử dụng SQLite async in-memory, do đó bạn không nhất thiết phải bật Docker PostgreSQL chỉ để chạy test).*
 
 ### 2.5. Nạp Dữ liệu Mẫu Khởi đầu (Seed Data — Tuỳ chọn)
 Khi đã khởi chạy PostgreSQL hoặc cần nạp dữ liệu mẫu ban đầu:

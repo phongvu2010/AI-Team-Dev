@@ -16,6 +16,58 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - ai_team_net
+
+  backend:
+    build:
+      context: .
+      dockerfile: src/backend/Dockerfile
+    container_name: ai_team_backend
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: production
+      DEBUG: "False"
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/dev_db
+      CORS_ORIGINS: '["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001"]'
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - ai_team_net
+
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    container_name: ai_team_frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      # Internal Docker network endpoint for Server-Side Rendering (SSR):
+      INTERNAL_API_URL: http://backend:8000
+      # Browser client endpoint:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_USE_MOCKS: "false"
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - ai_team_net
 
 volumes:
   postgres_data:
+
+networks:
+  ai_team_net:
+    driver: bridge

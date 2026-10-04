@@ -110,7 +110,8 @@ AI Team Dev/
 ├── TEMPLATE_GUIDE.md                              # Hướng dẫn chi tiết sử dụng template cho dự án mới
 ├── README.md                                      # Tổng quan dự án, kiến trúc & danh sách tác tử
 ├── pyproject.toml                                 # Khởi tạo dependencies & pytest pythonpath=["src"]
-├── docker-compose.yml                             # Khởi chạy PostgreSQL 16 Alpine local
+├── docker-compose.yml                             # Khởi chạy Full-Stack: PostgreSQL 16, FastAPI Backend & Next.js 15
+├── .dockerignore                                  # Tối ưu hóa build context Docker
 ├── .env.example                                   # Biến môi trường mẫu cho DB, API, Frontend
 ├── .gitignore                                     # Bỏ qua bytecode, node_modules, cache
 ├── .agents/
@@ -135,8 +136,11 @@ AI Team Dev/
 │   ├── db/                                        # Models, session, repositories, migrations, seeds
 │   │   └── AGENTS.md                              # Luật cục bộ tầng Database
 │   ├── backend/                                   # FastAPI app, schemas, services, api routers, tests
+│   │   ├── Dockerfile                             # Production Dockerfile cho FastAPI backend (non-root)
 │   │   └── AGENTS.md                              # Luật cục bộ tầng Backend
 │   └── frontend/                                  # Next.js app router, components, lib api, types
+│       ├── Dockerfile                             # Multi-stage standalone Dockerfile (~110MB)
+│       ├── .dockerignore                          # Bỏ qua node_modules, .next khi build frontend
 │       └── AGENTS.md                              # Luật cục bộ tầng Frontend
 └── docs/
     └── specs/                                     # Hồ sơ bàn giao tính năng chuẩn hóa

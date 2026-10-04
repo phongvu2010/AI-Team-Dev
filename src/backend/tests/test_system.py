@@ -49,4 +49,3 @@ async def test_postgres_only_marker_skips_on_sqlite(async_db_session: AsyncSessi
     # When on PostgreSQL, version() is a valid function. On SQLite this is automatically skipped.
     result = await async_db_session.execute(text("SELECT version()"))
     assert result.scalar_one() is not None
-

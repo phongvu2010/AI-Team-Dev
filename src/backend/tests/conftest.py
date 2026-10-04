@@ -162,4 +162,3 @@ async def client(
         yield test_client
 
     app.dependency_overrides.clear()
-
