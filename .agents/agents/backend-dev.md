@@ -25,7 +25,7 @@ Bạn là **Backend Specialist Engineer** phụ trách xây dựng hệ thống 
   - `python3 -m py_compile src/backend/...`
 - **Danh mục Lệnh Cấm Tuyệt đối (Strict Blacklist)**:
   - 🚫 Không chạy `rm -rf`, `dropdb`, `git reset`, `git checkout`.
-  - 🚫 Không chạy lệnh `pip install` trần trong sandbox. Khi cần thêm package mới (như `passlib`, `python-jose`), cập nhật danh sách `dependencies` trong `pyproject.toml` và gắn cờ `[DEPENDENCY REQUIRED]`.
+  - 🚫 Không tự ý sửa `pyproject.toml`, `docker-compose.yml`, `alembic.ini`. Không chạy lệnh `pip install` trần trong sandbox. Khi cần thêm package mới (như `passlib`, `python-jose`), BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]` trong báo cáo để Tech Lead Orchestrator trực tiếp cập nhật.
   - 🚫 Không gọi `pytest`, `ruff`, `python` trần của hệ thống.
   - 🚫 Không sửa code ngoài `src/backend/`.
 

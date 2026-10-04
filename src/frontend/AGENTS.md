@@ -12,7 +12,7 @@ Quy tắc bắt buộc khi bất kỳ Agent nào (`frontend-dev`, `qa-tester`, `
   - `npm --prefix src/frontend run build`
 - **Lệnh cấm tuyệt đối**:
   - Cấm `rm -rf`, `git reset`, `git checkout`.
-  - Cấm chạy lệnh `npm install` trần trong sandbox. Khi cần thêm package mới, cập nhật trực tiếp vào `dependencies` hoặc `devDependencies` trong `src/frontend/package.json` và gắn cờ `[DEPENDENCY REQUIRED]`.
+  - Cấm tự ý sửa `src/frontend/package.json` hay `package-lock.json`. Cấm chạy lệnh `npm install` trần trong sandbox. Khi cần thêm package mới, BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]` để Tech Lead Orchestrator trực tiếp cập nhật.
   - Cấm sửa code ngoài `src/frontend/`.
 
 ---
@@ -67,3 +67,5 @@ Khi nhận tin nhắn điều phối `[SELF-HEALING ACTION REQUIRED]` từ QA ho
    - Resolved Bug/Finding IDs: <BUG-01 hoặc REV-01>
    - Summary of Fix: <mô tả ngắn giải pháp đã thực hiện>
    ```
+
+- **Tiếp nhận Cảnh báo Lệch Schema Sớm (`[CONTRACT-UPDATE NOTICE]`)**: Khi nhận tin nhắn này từ Tech Lead tại Wave Handshake Gate, `frontend-dev` lập tức cập nhật lại TypeScript interfaces tại `src/frontend/src/types/` và mock fixtures tại `src/frontend/src/lib/api/mocks/` theo phiên bản `plan.md` mới nhất, chạy typecheck và phản hồi `[CONTRACT-ALIGNED]`.

@@ -26,12 +26,13 @@ Template này được thiết kế theo **Mô hình Ma trận (Matrix Architect
       │      └── docs/specs/<feature-slug>/plan.md
       │          (Metadata + Cross-Layer Matrix + REST API Contract + UI Spec + AC Matrix)
       │
-      ├──► Phase 2: DEV SQUADS (2-Wave Execution)
+      ├──► Phase 2: DEV SQUADS (2-Wave Pipelined Execution)
       │      ├── Wave 1 (Song song):
       │      │     ├── `db-dev`       ──► src/db/ (SQLAlchemy 2.0 + Alembic)
       │      │     └── `frontend-dev` ──► src/frontend/ (Next.js + Strict TS + Mocks)
-      │      └── Wave 2:
-      │            └── `backend-dev`  ──► src/backend/ (FastAPI + Pydantic v2)
+      │      ├── [Wave Handshake Gate] (Kích hoạt ngay khi DB xong models)
+      │      └── Wave 2 (Pipelined):
+      │            └── `backend-dev`  ──► src/backend/ (FastAPI + Pydantic v2, gối đầu song song)
       │
       ├──► Phase 3: TESTING & FEEDBACK LOOP (`qa-tester`)
       │      ├── Linter + Pytest SQLite in-memory + Frontend Typecheck
@@ -43,8 +44,9 @@ Template này được thiết kế theo **Mô hình Ma trận (Matrix Architect
       │      └── docs/specs/<feature-slug>/review-report.md
       │          └── [REVIEW-FIX ACTION REQUIRED] -> [FIX-COMPLETED] (Max 3 retries)
       │
-      └──► Phase 5: PACKAGING & COMMIT (Tech Lead Orchestrator)
-             └── Conventional Commits: feat(<feature-slug>): ...
+      └──► Phase 5: PACKAGING, COMMIT & CLEANUP (Tech Lead Orchestrator)
+             ├── Conventional Commits: feat(<feature-slug>): ...
+             └── Subagent Cleanup: manage_subagents(Action="kill")
 ```
 
 ---
@@ -203,10 +205,10 @@ Tùy vào nhu cầu công việc, bạn có thể chọn 1 trong 2 chế độ:
 Tech Lead sẽ tự động điều phối:
 1. `planner` $\to$ tạo `docs/specs/<feature-slug>/plan.md` (kèm Cross-Layer Data Contract Matrix).
 2. Wave 1: Gọi song song `db-dev` (`src/db/`) & `frontend-dev` (`src/frontend/`).
-3. Wave 2: Gọi `backend-dev` (`src/backend/`) kết nối `src/db/`.
+3. Wave 2 (Pipelined): Ngay khi `db-dev` hoàn thành models sạch sẽ qua Handshake Gate, kích hoạt ngay `backend-dev` (`src/backend/`) chạy gối đầu song song với `frontend-dev` mà không cần chờ FE xong 100%.
 4. `qa-tester` $\to$ chạy ruff, pytest, typecheck $\to$ tạo `docs/specs/<feature-slug>/test-report.md`. Tự động kích hoạt Vòng lặp Self-Healing nếu có lỗi.
 5. `code-reviewer` $\to$ audit `git diff` $\to$ tạo `docs/specs/<feature-slug>/review-report.md`. Tự động kích hoạt Review-Fix loop nếu có lỗi.
-6. Tự động đóng gói commit: `git add src/ docs/specs/<feature-slug>/ pyproject.toml src/frontend/package*.json 2>/dev/null && git commit -m "feat(<feature-slug>): ..."`
+6. Tự động đóng gói commit & dọn dẹp subagents: `git commit` $\to$ `manage_subagents` (`Action: "kill"`) toàn bộ squads trong `SQUAD_REGISTRY`.
 
 ### Chế độ 2: Gọi Trực tiếp Từng Tác tử Chuyên biệt (Direct Squad Invocation)
 - **Cần bản thiết kế**: *"Nhờ `planner` thiết kế kiến trúc phân hệ Đơn hàng."*
@@ -222,9 +224,10 @@ Tech Lead sẽ tự động điều phối:
 
 1. **Tuyệt đối không xoá thư mục `src/`**:
    - `src/` chứa các điểm neo (Anchor Points) và các file luật cục bộ [src/db/AGENTS.md](src/db/AGENTS.md), [src/backend/AGENTS.md](src/backend/AGENTS.md), [src/frontend/AGENTS.md](src/frontend/AGENTS.md).
-2. **Tuân thủ Tuyệt đối Rào Chắn Lệnh (CLI Guardrails)**:
+2. **Tuân thủ Tuyệt đối Rào Chắn Lệnh & Bảo vệ File Cấu hình Gốc (CLI Guardrails)**:
    - Các tác tử chỉ chạy lệnh trong danh mục Whitelist phân quyền.
-   - Tuyệt đối cấm chạy lệnh cài đặt trần `pip/npm install` trong sandbox. Khi cần thêm thư viện mới, cập nhật `pyproject.toml` hoặc `src/frontend/package.json` và cắm cờ `[DEPENDENCY REQUIRED]`.
+   - Subagents tuyệt đối không tự ý sửa đổi file cấu hình gốc (`pyproject.toml`, `docker-compose.yml`, `alembic.ini`, `src/frontend/package.json`). Khi cần thêm thư viện mới, subagent BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]`. Độc quyền Tech Lead Orchestrator chỉnh sửa các file manifest này để tránh race condition trong `Workspace: "inherit"`.
+   - Tuyệt đối cấm chạy lệnh cài đặt trần `pip/npm install` trong sandbox.
    - Luôn sử dụng `.venv/bin/pytest` và `.venv/bin/ruff` thay vì gọi lệnh trần.
 3. **Phân vùng File Tuyệt đối (File Isolation)**:
    - `db-dev` chỉ ghi `src/db/`.

@@ -14,7 +14,7 @@ Quy tắc bắt buộc khi bất kỳ Agent nào (`db-dev`, `qa-tester`, `code-r
   - `PYTHONPATH=src .venv/bin/python src/db/seeds/runner.py`
 - **Lệnh cấm tuyệt đối**:
   - Cấm `rm -rf`, `dropdb`, `git reset`, `git checkout`.
-  - Cấm chạy `pip install` trần trong sandbox. Khi cần thêm thư viện mới, cập nhật `pyproject.toml` và cắm cờ `[DEPENDENCY REQUIRED]`.
+  - Cấm tự ý sửa `pyproject.toml`, `docker-compose.yml`, `alembic.ini`. Cấm chạy `pip install` trần trong sandbox. Khi cần thêm thư viện mới, BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]` để Tech Lead Orchestrator trực tiếp cập nhật.
   - Cấm gọi lệnh `pytest`, `ruff`, `python` trần không rõ virtualenv.
 
 ---
@@ -45,6 +45,7 @@ Quy tắc bắt buộc khi bất kỳ Agent nào (`db-dev`, `qa-tester`, `code-r
   - Khi có PostgreSQL runtime local: Dùng `alembic upgrade head` (`docker compose up -d postgres`).
   - Trong sandbox / môi trường không có PostgreSQL: Chạy `PYTHONPATH=src .venv/bin/python src/db/migrations/generate_offline_migration.py <slug>` để tự động sinh file migration chuẩn xác (kèm ID revision hợp lệ) trong `src/db/migrations/versions/`, sau đó hoàn thiện logic `upgrade()` và `downgrade()`.
 - **Seed Data**: Đặt tại `src/db/seeds/<module>_seed.py`, đảm bảo tính idempotent (kiểm tra tồn tại trước khi add). Chạy qua `PYTHONPATH=src .venv/bin/python src/db/seeds/runner.py`.
+- **Bàn giao Wave Handshake (`[HANDSHAKE-HANDOVER]`)**: Khi hoàn thành models, migrations và seeds, `db-dev` gửi thông điệp chuẩn hóa kèm cờ `Contract Modified: TRUE/FALSE` và chi tiết thay đổi để Tech Lead thẩm định tại Handshake Gate trước khi kích hoạt Wave 2.
 
 ---
 

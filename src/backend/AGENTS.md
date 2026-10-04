@@ -11,7 +11,7 @@ Quy tắc bắt buộc khi bất kỳ Agent nào (`backend-dev`, `qa-tester`, `c
   - `python3 -m py_compile src/backend/...`
 - **Lệnh cấm tuyệt đối**:
   - Cấm `rm -rf`, `dropdb`, `git reset`, `git checkout`.
-  - Cấm chạy `pip install` trần trong sandbox. Khi cần thêm thư viện Python mới, cập nhật `pyproject.toml` và cắm cờ `[DEPENDENCY REQUIRED]`.
+  - Cấm tự ý sửa `pyproject.toml`, `docker-compose.yml`, `alembic.ini`. Cấm chạy `pip install` trần trong sandbox. Khi cần thêm thư viện Python mới, BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]` để Tech Lead Orchestrator trực tiếp cập nhật.
   - Cấm gọi lệnh `pytest`, `ruff`, `python` trần không rõ virtualenv.
 
 ---

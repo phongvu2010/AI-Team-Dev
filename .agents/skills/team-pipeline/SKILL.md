@@ -37,11 +37,12 @@ Nhằm đảm bảo tính cô lập và toàn vẹn của hệ thống, mọi t�
 - **`frontend-dev`**: Chỉ chạy `npm --prefix src/frontend run typecheck`, `npm --prefix src/frontend run lint`, `npm --prefix src/frontend run build`.
 - **`qa-tester`**: Chỉ chạy `.venv/bin/ruff check src/`, `PYTHONPATH=src ./.venv/bin/pytest src/backend/tests -v`, `npm --prefix src/frontend run typecheck`.
 - **`code-reviewer`**: Chỉ chạy `git status --short`, `git diff --stat`, `git diff -- src/ docs/ ':!*package-lock.json' ':!*.lock' ':!*.min.*'`, `git diff`.
-- **`tech-lead`**: Điều phối, git add, git commit.
+- **`tech-lead`**: Điều phối subagents, quản lý và dọn dẹp subagents qua `manage_subagents`, độc quyền cập nhật manifest cấu hình gốc (`pyproject.toml`, `package.json`), git add, git commit.
 
 ### 2.2. Blacklist tuyệt đối:
 - Cấm `rm -rf` ngoài thư mục tạm, `git reset --hard`, `git clean -fdx`, `git checkout .`, `git push --force`.
-- Cấm chạy `pip install` hoặc `npm install` trần trong sandbox. Thêm dependency bằng cách cập nhật `pyproject.toml` hoặc `src/frontend/package.json` và gắn cờ `[DEPENDENCY REQUIRED]`.
+- Cấm subagents tự ý sửa đổi file cấu hình gốc (`pyproject.toml`, `docker-compose.yml`, `alembic.ini`, `src/frontend/package.json`). Khi cần thêm thư viện mới, subagent BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]`. Độc quyền Tech Lead Orchestrator chỉnh sửa các file manifest này.
+- Cấm chạy `pip install` hoặc `npm install` trần trong sandbox.
 - Cấm gọi `pytest`, `ruff`, `python` trần không trỏ vào `.venv/bin/`.
 - Cấm tác tử sửa file ngoài thư mục phụ trách (`src/db/` cho db-dev, `src/backend/` cho backend-dev, `src/frontend/` cho frontend-dev).
 
@@ -72,17 +73,24 @@ Gọi `invoke_subagent`:
   - Gọi đồng thời `db-dev` (`Model: "inherit"`) và `frontend-dev` (`Model: "inherit"`) trong cùng lệnh `invoke_subagent`.
   - `db-dev` xây dựng models (kế thừa `UUIDPrimaryKeyMixin`, mảng dùng `JSON`), repositories async (dùng `selectinload`), migrations (dùng `DIRECT_DATABASE_URL` port 5432 nếu có Supabase, hoặc `generate_offline_migration.py` nếu không có PostgreSQL) và seeds tại `src/db/`.
   - `frontend-dev` xây dựng TypeScript types, API client wrapper, mock fixtures và UI components xử lý đủ 4 trạng thái (Loading, Error, Empty, Success) tại `src/frontend/` (hỗ trợ `isMockMode()` với cờ `NEXT_PUBLIC_USE_MOCKS=true` để phát triển và kiểm chứng UI độc lập).
-- **Wave Handshake Gate (Chốt kiểm tra chéo trước Wave 2)**:
-  - Trước khi khởi chạy `backend-dev`, Tech Lead chạy smoke check:
+- **Wave Handshake Gate, Cảnh Báo Lệch Schema Sớm & Tối Ưu Hóa Tiến Độ Pipelined**:
+  - `db-dev` khi xong Wave 1 bắt buộc gửi thông điệp `[HANDSHAKE-HANDOVER]` kèm cờ `Contract Modified: TRUE | FALSE`.
+  - Tech Lead kiểm tra chéo:
     ```bash
     python3 -m py_compile src/db/models/*.py
     .venv/bin/ruff check src/db/
     ```
   - Xác nhận models compile sạch sẽ và được export đầy đủ tại `src/db/models/__init__.py`. Nếu có lỗi cú pháp, gửi ngay `[SELF-HEALING ACTION REQUIRED]` qua `send_message` tới `SQUAD_REGISTRY["db-dev"]`.
-- **Wave 2 (Triển khai `backend-dev` & Đồng bộ Live API)**:
-  - Khi Wave Handshake Gate đạt yêu cầu, gọi `backend-dev` (`Model: "inherit"`) trong `invoke_subagent` và ghi nhận `conv_id_be`.
+  - **Cơ chế Cảnh báo Lệch Schema Sớm (Early Schema Drift Protocol)**:
+    - **Nếu `Contract Modified: FALSE`**: Models khớp 100% với `plan.md`. Tech Lead **KÍCH HOẠT NGAY `backend-dev` (Wave 2)** mà không cần chờ `frontend-dev` xong 100%. Backend chạy gối đầu song song với Frontend (Pipelined Wave Execution) giúp rút ngắn 25-40% tổng thời gian phát triển!
+    - **Nếu `Contract Modified: TRUE`**:
+      1. Tech Lead cập nhật ngay `docs/specs/<feature-slug>/plan.md`, nâng `version` (`1.0.0` $\to$ `1.1.0`), đồng bộ lại **Cross-Layer Data Contract Matrix** và **API Contract**.
+      2. Tech Lead gửi ngay thông điệp `[CONTRACT-UPDATE NOTICE]` qua `send_message` tới `SQUAD_REGISTRY["frontend-dev"]` để cập nhật TypeScript types và mock fixtures, nhận lại xác nhận `[CONTRACT-ALIGNED]`.
+      3. Tech Lead kích hoạt `backend-dev` (Wave 2) bám sát theo `plan.md` v1.1.0 đã đồng bộ. Triệt tiêu hoàn toàn rủi ro lệch hợp đồng khi vào QA.
+- **Wave 2 (Triển khai `backend-dev` gối đầu song song & Đồng bộ Live API)**:
+  - Gọi `backend-dev` (`Model: "inherit"`) trong `invoke_subagent` và ghi nhận `conv_id_be`.
   - `backend-dev` tạo Pydantic v2 schemas (`ConfigDict(from_attributes=True)`), services nghiệp vụ và API routers tại `src/backend/`, kết nối trực tiếp với models từ `src/db/` qua `PYTHONPATH=src`.
-  - **Đồng bộ Mock → Live API & Cache Invalidation**: Sau khi Backend hoàn thành các endpoints, chuyển `NEXT_PUBLIC_USE_MOCKS=false`. Typed API client tự động áp dụng `cache: 'no-store'`, header `Cache-Control: 'no-cache'`, và gọi `clearClientApiCache()` để xóa sạch cache mock cũ.
+  - **Đồng bộ Mock → Live API & Cache Invalidation**: Khi cả `backend-dev` và `frontend-dev` đều hoàn tất, chuyển `NEXT_PUBLIC_USE_MOCKS=false`. Typed API client tự động áp dụng `cache: 'no-store'`, header `Cache-Control: 'no-cache'`, và gọi `clearClientApiCache()` để xóa sạch cache mock cũ.
 
 ### Bước 3: Khởi chạy `qa-tester` & Vòng lặp Tự sửa lỗi (Self-Healing Loop)
 Gọi `invoke_subagent` với `TypeName: "qa-tester"`, `Model: "flash"`:
@@ -156,19 +164,24 @@ Khi `test-report.md` đạt `PASSED 100%`:
     - Tech Lead yêu cầu `qa-tester` chạy lại bài test để chống lỗi hồi quy (regression), sau đó yêu cầu `code-reviewer` thẩm định lại. Tối đa 3 vòng lặp.
   - Khi Verdict đạt `APPROVED`, chuyển sang Bước 5.
 
-### Bước 5: Hoàn tất & Đóng gói Git Commit
+### Bước 5: Hoàn tất, Đóng gói Git Commit & Dọn Dẹp Subagent
 Khi `review-report.md` đạt `APPROVED`:
-- Chạy `git status --short` kiểm tra toàn bộ file mới và thay đổi trong `src/`, `docs/specs/<feature-slug>/`, `pyproject.toml`, `package.json`.
-- Thực hiện commit chuẩn hóa:
-  ```bash
-  git add src/ docs/specs/<feature-slug>/
-  git add pyproject.toml src/frontend/package*.json 2>/dev/null || true
-  git commit -m "feat(<feature-slug>): implement <tên tính năng ngắn gọn>
+1. **Kiểm tra trạng thái Git & Cập nhật Manifest Gốc**:
+   - Nếu trong các phase trước có cờ `[DEPENDENCY REQUIRED]`, Tech Lead Orchestrator trực tiếp kiểm tra và cập nhật `pyproject.toml` hoặc `src/frontend/package.json`.
+   - Chạy `git status --short` kiểm tra toàn bộ file mới và thay đổi trong `src/`, `docs/specs/<feature-slug>/`, và các file manifest.
+2. **Thực hiện Commit chuẩn hóa**:
+   ```bash
+   git add src/ docs/specs/<feature-slug>/
+   git add pyproject.toml src/frontend/package*.json 2>/dev/null || true
+   git commit -m "feat(<feature-slug>): implement <tên tính năng ngắn gọn>
 
-  - DB: add SQLAlchemy 2.0 models & migrations in src/db/
-  - Backend: implement FastAPI schemas, services & endpoints in src/backend/
-  - Frontend: build Next.js UI components & typed API client in src/frontend/
-  - Quality: 100% tests passed, code review approved
-  - Specs: docs/specs/<feature-slug>/plan.md"
-  ```
-- Tổng hợp báo cáo nghiệm thu hoàn tất cho User.
+   - DB: add SQLAlchemy 2.0 models & migrations in src/db/
+   - Backend: implement FastAPI schemas, services & endpoints in src/backend/
+   - Frontend: build Next.js UI components & typed API client in src/frontend/
+   - Quality: 100% tests passed, code review approved
+   - Specs: docs/specs/<feature-slug>/plan.md"
+   ```
+3. **Tự Động Hóa Dọn Dẹp Subagent (Subagent Lifecycle Cleanup)**:
+   - Sau khi commit hoàn tất, Tech Lead Orchestrator **tự động gọi công cụ `manage_subagents` với `Action: "kill"`** cho toàn bộ Conversation IDs trong `SQUAD_REGISTRY` (hoặc `Action: "kill_all"`).
+   - *Mục đích*: Giải phóng tài nguyên hệ thống, bộ nhớ và các background tasks của Antigravity 2.0, bảo đảm không bị rò rỉ context hoặc subagents zombie cho tính năng tiếp theo.
+4. Tổng hợp báo cáo nghiệm thu hoàn tất cho User kèm xác nhận dọn dẹp sạch sẽ.

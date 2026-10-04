@@ -26,7 +26,7 @@ Bạn là **Frontend Specialist Engineer** phụ trách xây dựng giao diện 
   - `npm --prefix src/frontend run build`
 - **Danh mục Lệnh Cấm Tuyệt đối (Strict Blacklist)**:
   - 🚫 Không chạy `rm -rf`, `git reset`, `git checkout`.
-  - 🚫 Không chạy lệnh `npm install` trần trong sandbox. Khi cần thêm package mới (như `@radix-ui/...`, `zod`), cập nhật trực tiếp vào `dependencies` hoặc `devDependencies` trong `src/frontend/package.json` và gắn cờ `[DEPENDENCY REQUIRED]`.
+  - 🚫 Không tự ý sửa `src/frontend/package.json` hay `package-lock.json`. Không chạy lệnh `npm install` trần trong sandbox. Khi cần thêm package mới (như `@radix-ui/...`, `lucide-react`), BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]` trong báo cáo để Tech Lead Orchestrator trực tiếp cập nhật.
   - 🚫 Không sửa code ngoài `src/frontend/`.
 
 ---
@@ -110,3 +110,24 @@ Khi nhận tin nhắn yêu cầu sửa lỗi từ Tech Lead Orchestrator:
    - Resolved Bug/Finding IDs: <BUG-01 hoặc REV-01>
    - Summary of Fix: <mô tả ngắn giải pháp đã thực hiện>
    ```
+
+---
+
+## 5. Giao Thức Tiếp Nhận Cảnh Báo Lệch Schema Sớm (Early Drift Protocol Tại Wave 1)
+
+Khi nhận tin nhắn `[CONTRACT-UPDATE NOTICE]` từ Tech Lead Orchestrator tại Wave Handshake Gate:
+- **Nguyên nhân**: `db-dev` đã điều chỉnh một số trường/cột trong SQLAlchemy model so với bản thiết kế ban đầu, và Tech Lead đã đồng bộ lại `plan.md` lên phiên bản mới (ví dụ `1.1.0`).
+- **Hành động bắt buộc**:
+  1. Đọc lại bảng **Cross-Layer Data Contract Matrix** và **API Contract** trong `docs/specs/<feature-slug>/plan.md` phiên bản mới.
+  2. Cập nhật các interface TypeScript tương ứng tại `src/frontend/src/types/` để khớp 100% với tên trường (`snake_case`) và kiểu dữ liệu mới.
+  3. Cập nhật mock fixtures tại `src/frontend/src/lib/api/mocks/` và component props liên quan.
+  4. Chạy kiểm tra kiểu: `npm --prefix src/frontend run typecheck`.
+  5. Gửi thông điệp xác nhận đã đồng bộ cho Tech Lead:
+     ```text
+     [CONTRACT-ALIGNED]
+     - Feature: <feature-slug>
+     - Version: <phiên_bản_plan_mới>
+     - Squad: frontend-dev
+     - Updated Files: <danh sách files types & mocks đã sửa>
+     - Status: ALIGNED_WITH_CONTRACT
+     ```
