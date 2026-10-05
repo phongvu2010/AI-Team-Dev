@@ -22,9 +22,15 @@ Template này được thiết kế theo **Mô hình Ma trận (Matrix Architect
 │               TECH LEAD / ORCHESTRATOR (Main)             │
 └───────────────────────────────────────────────────────────┘
       │
-      ├──► Phase 1: PLANNER (`planner`)
-      │      └── docs/specs/<feature-slug>/plan.md
-      │          (Metadata + Cross-Layer Matrix + REST API Contract + UI Spec + AC Matrix)
+      ├──► Phase 0: BA AGENT (`ba`, Model: "pro")
+      │      ├── Phỏng vấn / làm rõ yêu cầu từ prompt của User (`ask_question`)
+      │      ├── Xuất bản: docs/specs/<feature-slug>/prd.md (FRs, BRs, ECs, BACs)
+      │      └── Nghiệm thu với User (PRD Sign-off Gate -> status: APPROVED_BY_USER)
+      │
+      ├──► Phase 1: PLANNER (`planner`, Model: "pro")
+      │      └── Đầu vào: docs/specs/<feature-slug>/prd.md (đã duyệt) + Codebase
+      │      └── Xuất bản: docs/specs/<feature-slug>/plan.md
+      │          (Metadata + Data Contract Matrix + API Contract + UI Spec + AC Matrix)
       │
       ├──► Phase 2: DEV SQUADS (2-Wave Pipelined Execution)
       │      ├── Wave 1 (Song song):
@@ -34,12 +40,12 @@ Template này được thiết kế theo **Mô hình Ma trận (Matrix Architect
       │      └── Wave 2 (Pipelined):
       │            └── `backend-dev`  ──► src/backend/ (FastAPI + Pydantic v2, gối đầu song song)
       │
-      ├──► Phase 3: TESTING & FEEDBACK LOOP (`qa-tester`)
+      ├──► Phase 3: TESTING & FEEDBACK LOOP (`qa-tester`, Model: "flash")
       │      ├── Linter + Pytest SQLite in-memory + Frontend Typecheck
       │      └── docs/specs/<feature-slug>/test-report.md
       │          └── [SELF-HEALING ACTION REQUIRED] -> [FIX-COMPLETED] (Max 3 retries)
       │
-      ├──► Phase 4: CODE REVIEW & AUDIT (`code-reviewer`)
+      ├──► Phase 4: CODE REVIEW & AUDIT (`code-reviewer`, Model: "pro")
       │      ├── Token-optimized audit qua git diff
       │      └── docs/specs/<feature-slug>/review-report.md
       │          └── [REVIEW-FIX ACTION REQUIRED] -> [FIX-COMPLETED] (Max 3 retries)
@@ -201,16 +207,18 @@ Mở thư mục dự án mới trong **Antigravity 2.0**, bạn đóng vai trò 
 
 Tùy vào nhu cầu công việc, bạn có thể chọn 1 trong 2 chế độ:
 
-### Chế độ 1: Chạy Full-Flow (Tự động 5 Phase)
+### Chế độ 1: Chạy Full-Flow (Tự động 6 Giai đoạn khép kín)
 Tech Lead sẽ tự động điều phối:
-1. `planner` $\to$ tạo `docs/specs/<feature-slug>/plan.md` (kèm Cross-Layer Data Contract Matrix).
-2. Wave 1: Gọi song song `db-dev` (`src/db/`) & `frontend-dev` (`src/frontend/`).
-3. Wave 2 (Pipelined): Ngay khi `db-dev` hoàn thành models sạch sẽ qua Handshake Gate, kích hoạt ngay `backend-dev` (`src/backend/`) chạy gối đầu song song với `frontend-dev` mà không cần chờ FE xong 100%.
-4. `qa-tester` $\to$ chạy ruff, pytest, typecheck $\to$ tạo `docs/specs/<feature-slug>/test-report.md`. Tự động kích hoạt Vòng lặp Self-Healing nếu có lỗi.
-5. `code-reviewer` $\to$ audit `git diff` $\to$ tạo `docs/specs/<feature-slug>/review-report.md`. Tự động kích hoạt Review-Fix loop nếu có lỗi.
-6. Tự động đóng gói commit & dọn dẹp subagents: `git commit` $\to$ `manage_subagents` (`Action: "kill"`) toàn bộ squads trong `SQUAD_REGISTRY`.
+1. `ba` (`Model: "pro"`) $\to$ phỏng vấn tương tác qua `ask_question`, làm rõ yêu cầu nghiệp vụ & phát hiện kịch bản góc $\to$ tạo `docs/specs/<feature-slug>/prd.md` (chờ User duyệt tại PRD Sign-off Gate).
+2. `planner` (`Model: "pro"`) $\to$ tiếp nhận `prd.md` đã duyệt $\to$ tạo `docs/specs/<feature-slug>/plan.md` (kèm Cross-Layer Data Contract Matrix, REST API Contract, UI Spec, AC Matrix).
+3. Wave 1: Gọi song song `db-dev` (`src/db/`) & `frontend-dev` (`src/frontend/` với Mock Fixtures).
+4. Wave 2 (Pipelined): Ngay khi `db-dev` hoàn thành models sạch sẽ qua Handshake Gate, kích hoạt ngay `backend-dev` (`src/backend/`) chạy gối đầu song song với `frontend-dev` mà không cần chờ FE xong 100%.
+5. `qa-tester` (`Model: "flash"`) $\to$ chạy ruff, pytest, typecheck $\to$ tạo `docs/specs/<feature-slug>/test-report.md`. Tự động kích hoạt Vòng lặp Self-Healing nếu có lỗi.
+6. `code-reviewer` (`Model: "pro"`) $\to$ audit `git diff` $\to$ tạo `docs/specs/<feature-slug>/review-report.md`. Tự động kích hoạt Review-Fix loop nếu có lỗi.
+7. Tự động đóng gói commit & dọn dẹp subagents: `git commit` $\to$ `manage_subagents` (`Action: "kill"`) toàn bộ squads trong `SQUAD_REGISTRY`.
 
 ### Chế độ 2: Gọi Trực tiếp Từng Tác tử Chuyên biệt (Direct Squad Invocation)
+- **Làm rõ yêu cầu / Viết PRD**: *"Nhờ `ba` phỏng vấn và lập tài liệu PRD cho tính năng mới."*
 - **Cần bản thiết kế**: *"Nhờ `planner` thiết kế kiến trúc phân hệ Đơn hàng."*
 - **Sửa Database**: *"Nhờ `db-dev` thêm index cho cột `sku` bảng `products` và tạo migration Alembic."*
 - **Viết thêm API**: *"Nhờ `backend-dev` thêm endpoint lọc sản phẩm theo khoảng giá."*
@@ -252,3 +260,7 @@ Tech Lead sẽ tự động điều phối:
    - Khi không có PostgreSQL container, chạy `PYTHONPATH=src .venv/bin/python src/db/migrations/generate_offline_migration.py <slug>` để tự động tạo file migration chuẩn có revision ID hợp lệ.
 10. **Tối ưu Token cho Code Review**:
     - Dùng lệnh lọc `git diff -- src/ docs/ ':!*package-lock.json' ':!*.lock'` để loại bỏ lockfiles, dồn 100% token budget vào thẩm định kiến trúc, N+1 query và bảo mật.
+11. **Xử lý Bất đồng bộ Tin nhắn & Chốt Hội tụ Trước QA (Pre-QA Wave Convergence Gate)**:
+    - Khi `db-dev` có Schema Drift tại Handshake Gate (`Contract Modified: TRUE`), Tech Lead gửi `[CONTRACT-UPDATE NOTICE]` cho `frontend-dev` qua `send_message`. Nhờ cơ chế hàng đợi phi chặn (non-blocking) của Antigravity 2.0, `frontend-dev` hoàn thành nốt thao tác nguyên tử dở dang rồi mới cập nhật types/mocks và phản hồi `[CONTRACT-ALIGNED]`.
+    - Tech Lead không cần chờ Frontend mà kích hoạt ngay `backend-dev` (Wave 2) theo `plan.md v1.1.0`.
+    - Trước khi vào Phase 3 (QA Testing), Tech Lead chốt hội tụ: chỉ chuyển `NEXT_PUBLIC_USE_MOCKS=false` và kích hoạt `qa-tester` khi CẢ HAI squad đều hoàn thành nhiệm vụ (`backend-dev` xong live API và `frontend-dev` đã gửi `[CONTRACT-ALIGNED]`).

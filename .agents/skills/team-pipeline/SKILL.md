@@ -1,7 +1,7 @@
 ---
 name: team-pipeline
 description: >-
-  Orchestrates the Multi-Agent Matrix Dev Team pipeline (Planner -> [Wave 1: DB Dev + Frontend Dev -> Wave 2: Backend Dev] -> QA Tester -> Code Reviewer) on Antigravity 2.0. Activate this skill when the user wants to build a full-stack feature, run the multi-agent team workflow, or coordinate tasks across DB, Backend, and Frontend teams.
+  Orchestrates the Multi-Agent Matrix Dev Team pipeline (BA [Elicitation & PRD] -> Planner -> [Wave 1: DB Dev + Frontend Dev -> Wave 2: Backend Dev] -> QA Tester -> Code Reviewer) on Antigravity 2.0. Activate this skill when the user wants to build a full-stack feature, run the multi-agent team workflow, or coordinate tasks across DB, Backend, and Frontend teams.
 ---
 
 # Multi-Agent Matrix Dev Team Pipeline (`team-pipeline`)
@@ -16,7 +16,8 @@ Mọi tính năng đều được định danh bằng `<feature-slug>` (`kebab-c
 
 | Giai đoạn | Subagent | Đầu vào (Input) | Đầu ra (Output Artifact & Code) | Handoff Template |
 | :--- | :--- | :--- | :--- | :--- |
-| **1. Planning** | `planner` | Yêu cầu từ User + Codebase hiện tại | `docs/specs/<feature-slug>/plan.md` (Metadata + Data Contract Matrix + API Spec + UI Spec + AC Matrix) | [plan-template.md](./resources/plan-template.md) |
+| **0. BA & Requirements** | `ba` | Prompt / Yêu cầu ban đầu từ User | `docs/specs/<feature-slug>/prd.md` (FRs, Business Rules, Edge Cases, BACs, Clarification Log) | [prd-template.md](./resources/prd-template.md) |
+| **1. Planning** | `planner` | `prd.md` (đã duyệt) + Codebase hiện tại | `docs/specs/<feature-slug>/plan.md` (Metadata + Data Contract Matrix + API Spec + UI Spec + AC Matrix) | [plan-template.md](./resources/plan-template.md) |
 | **2A. Wave 1 (DB)** | `db-dev` | `plan.md` (Data Contract) | Code trong `src/db/` (SQLAlchemy 2.0 Models, Repositories, Migrations, Seeds) | - |
 | **2B. Wave 1 (Frontend)** | `frontend-dev` | `plan.md` (API Contract + UI Spec) | Code trong `src/frontend/` (TypeScript Types, API Client, Mock Fixtures, 4 UI States) | - |
 | **2C. Wave 2 (Backend)** | `backend-dev` | `plan.md` (API Contract) + `src/db/` | Code trong `src/backend/` (Pydantic v2 Schemas, Services, Routers kết nối `src/db/`) | - |
@@ -31,7 +32,8 @@ Mọi tính năng đều được định danh bằng `<feature-slug>` (`kebab-c
 Nhằm đảm bảo tính cô lập và toàn vẹn của hệ thống, mọi tác tử phải tuân thủ nghiêm ngặt:
 
 ### 2.1. Whitelist theo vai trò:
-- **`planner`**: Chỉ thao tác đọc/ghi file tài liệu (`view_file`, `write_to_file`).
+- **`ba`**: Sử dụng `ask_question` để phỏng vấn/làm rõ yêu cầu với User, và các công cụ đọc/ghi tài liệu (`view_file`, `write_to_file`, `replace_file_content`). Tuyệt đối không can thiệp mã nguồn hay chạy lệnh shell.
+- **`planner`**: Chỉ thao tác đọc/ghi file tài liệu (`view_file`, `write_to_file`, `replace_file_content`).
 - **`db-dev`**: Chỉ chạy `.venv/bin/ruff check src/db/`, `python3 -m py_compile src/db/...`, `PYTHONPATH=src .venv/bin/python src/db/migrations/generate_offline_migration.py <slug>`, `alembic ...`, `PYTHONPATH=src .venv/bin/python src/db/seeds/runner.py`.
 - **`backend-dev`**: Chỉ chạy `.venv/bin/ruff check src/backend/`, `python3 -m py_compile src/backend/...`.
 - **`frontend-dev`**: Chỉ chạy `npm --prefix src/frontend run typecheck`, `npm --prefix src/frontend run lint`, `npm --prefix src/frontend run build`.
@@ -50,13 +52,25 @@ Nhằm đảm bảo tính cô lập và toàn vẹn của hệ thống, mọi t�
 
 ## 3. Quy Trình Điều Phối Chi Tiết Cho Tech Lead (Main Agent)
 
-### Bước 1: Khởi chạy `planner` & Thiết lập Hợp đồng Kỹ thuật
+### Bước 0: Khởi chạy `ba` & Làm rõ yêu cầu, Thiết lập PRD (Requirements Elicitation & PRD Gate)
+Gọi `invoke_subagent`:
+- `TypeName`: `"ba"`
+- `Role`: `"Business Analyst & Requirements Engineer"`
+- `Model`: `"pro"` *(Model Pro đảm bảo tư duy phân tích nghiệp vụ sắc bén, phát hiện điểm mù và thiết lập kịch bản phỏng vấn)*
+- `Prompt`: Phân tích prompt ban đầu từ User, sử dụng `ask_question` để phỏng vấn các điểm mơ hồ, xác định phạm vi In-Scope/Out-of-Scope, Business Rules, Edge Cases, User Journeys, và Business Acceptance Criteria. Xuất bản PRD tại `docs/specs/<feature-slug>/prd.md` theo mẫu `.agents/skills/team-pipeline/resources/prd-template.md`.
+- **Cổng Nghiệm Thu PRD (PRD Sign-off Gate)**:
+  - `ba` trình bày tóm tắt cho User và xin phê duyệt (Sign-off).
+  - Khi User chấp thuận, tài liệu được gắn `status: APPROVED_BY_USER`.
+  - Tech Lead kiểm tra xác nhận sự phê duyệt này trước khi chuyển sang Bước 1.
+
+### Bước 1: Khởi chạy `planner` & Chuyển hóa PRD thành Hợp đồng Kỹ thuật
 Gọi `invoke_subagent`:
 - `TypeName`: `"planner"`
 - `Role`: `"System Architect & Planner"`
 - `Model`: `"pro"` *(Model Pro đảm bảo khả năng tổng hợp kiến trúc sâu và ma trận dữ liệu 3 tầng)*
-- `Prompt`: Đọc mẫu `.agents/skills/team-pipeline/resources/plan-template.md`, khảo sát hiện trạng `src/` và tạo bản thiết kế đầy đủ tại `docs/specs/<feature-slug>/plan.md`.
+- `Prompt`: Đọc kỹ tài liệu PRD đã được phê duyệt tại `docs/specs/<feature-slug>/prd.md`, đọc mẫu `.agents/skills/team-pipeline/resources/plan-template.md`, khảo sát hiện trạng `src/` và tạo bản thiết kế đầy đủ tại `docs/specs/<feature-slug>/plan.md`.
 - **Yêu cầu bắt buộc**:
+  - Ánh xạ trực tiếp từ `BAC-xx` / `FR-xx` trong PRD sang `AC-xx` (Technical Acceptance Criteria) và `TC-xx` (Test Case ID).
   - Thiết lập bảng **Cross-Layer Data Contract Matrix**: Thống nhất 100% tên trường `snake_case` giữa DB Column, Pydantic Schema và TypeScript Interface.
   - Chuẩn hóa kiểu dữ liệu: UUID (Python `uuid.uuid4`), Timestamps (ISO 8601 UTC), Arrays (`JSON` default list).
   - Cung cấp Wave 1 Mock Fixtures cho Frontend.
@@ -81,12 +95,13 @@ Gọi `invoke_subagent`:
     .venv/bin/ruff check src/db/
     ```
   - Xác nhận models compile sạch sẽ và được export đầy đủ tại `src/db/models/__init__.py`. Nếu có lỗi cú pháp, gửi ngay `[SELF-HEALING ACTION REQUIRED]` qua `send_message` tới `SQUAD_REGISTRY["db-dev"]`.
-  - **Cơ chế Cảnh báo Lệch Schema Sớm (Early Schema Drift Protocol)**:
+  - **Cơ chế Cảnh báo Lệch Schema Sớm & Xử Lý Bất Đồng Bộ (Early Drift & Async Ingestion Protocol)**:
     - **Nếu `Contract Modified: FALSE`**: Models khớp 100% với `plan.md`. Tech Lead **KÍCH HOẠT NGAY `backend-dev` (Wave 2)** mà không cần chờ `frontend-dev` xong 100%. Backend chạy gối đầu song song với Frontend (Pipelined Wave Execution) giúp rút ngắn 25-40% tổng thời gian phát triển!
     - **Nếu `Contract Modified: TRUE`**:
       1. Tech Lead cập nhật ngay `docs/specs/<feature-slug>/plan.md`, nâng `version` (`1.0.0` $\to$ `1.1.0`), đồng bộ lại **Cross-Layer Data Contract Matrix** và **API Contract**.
-      2. Tech Lead gửi ngay thông điệp `[CONTRACT-UPDATE NOTICE]` qua `send_message` tới `SQUAD_REGISTRY["frontend-dev"]` để cập nhật TypeScript types và mock fixtures, nhận lại xác nhận `[CONTRACT-ALIGNED]`.
-      3. Tech Lead kích hoạt `backend-dev` (Wave 2) bám sát theo `plan.md` v1.1.0 đã đồng bộ. Triệt tiêu hoàn toàn rủi ro lệch hợp đồng khi vào QA.
+      2. Tech Lead gửi ngay thông điệp `[CONTRACT-UPDATE NOTICE]` qua `send_message` tới `SQUAD_REGISTRY["frontend-dev"]` (bất đồng bộ phi chặn). `frontend-dev` hoàn thành thao tác nguyên tử hiện tại, tiếp nhận thông báo ở turn kế tiếp, cập nhật types/mocks và phản hồi `[CONTRACT-ALIGNED]`.
+      3. Tech Lead **KHÔNG CẦN CHỜ** Frontend mà kích hoạt ngay `backend-dev` (Wave 2) bám sát theo `plan.md` v1.1.0 (zero blocking).
+      4. **Chốt Hội Tụ Trước QA (Pre-QA Wave Convergence Gate)**: Trước khi chuyển sang Bước 3 (QA Testing), Tech Lead chốt hội tụ: chỉ chuyển `NEXT_PUBLIC_USE_MOCKS=false` và kích hoạt `qa-tester` khi CẢ HAI squad đều hoàn thành (`backend-dev` xong live API và `frontend-dev` đã gửi `[CONTRACT-ALIGNED]`). Triệt tiêu 100% rủi ro lệch hợp đồng.
 - **Wave 2 (Triển khai `backend-dev` gối đầu song song & Đồng bộ Live API)**:
   - Gọi `backend-dev` (`Model: "inherit"`) trong `invoke_subagent` và ghi nhận `conv_id_be`.
   - `backend-dev` tạo Pydantic v2 schemas (`ConfigDict(from_attributes=True)`), services nghiệp vụ và API routers tại `src/backend/`, kết nối trực tiếp với models từ `src/db/` qua `PYTHONPATH=src`.

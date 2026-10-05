@@ -16,6 +16,7 @@ iteration: 1
 ---
 
 ## 1. Tổng quan & Mục tiêu Nghiệp vụ (Overview & Objectives)
+- **Tài liệu tham chiếu PRD**: [`docs/specs/<feature-slug>/prd.md`](./prd.md) (Biên soạn bởi `ba`, Status: `APPROVED_BY_USER`)
 - **Mô tả tính năng**: ...
 - **Mục tiêu cốt lõi**: ...
 - **Phân định phạm vi**:
@@ -146,13 +147,13 @@ export const MOCK_<RESOURCE>S: <Resource>[] = [
 
 ## 6. Ma Trận Truy Xuất Yêu Cầu & Kịch Bản Kiểm Thử (Acceptance Criteria & Test Matrix)
 
-| Tiêu Chí Nghiệm Thu (AC-ID) | Mô Tả Nghiệp Vụ | Mã Test Case (TC-ID) | Tầng Kiểm Thử | Kết Quả Kỳ Vọng |
-| :--- | :--- | :--- | :--- | :--- |
-| **AC-01** | Tạo tài nguyên với dữ liệu hợp lệ | `TC-01` | Backend API | HTTP 201, trả về đúng schema JSON |
-| **AC-02** | Bắt lỗi thiếu trường bắt buộc | `TC-02` | Backend API | HTTP 422, trả về trường vi phạm |
-| **AC-03** | Ràng buộc Unique Constraint | `TC-03` | Database & API | HTTP 409 hoặc database integrity error |
-| **AC-04** | Hiển thị đầy đủ 4 trạng thái UI | `TC-04` | Frontend Web | Loading skeleton, error retry, empty CTA, data display |
-| **AC-05** | Xác thực kiểu dữ liệu nghiêm ngặt | `TC-05` | Frontend Typecheck | Không có lỗi biên dịch TypeScript, 0 `any` |
+| Tiêu Chí Nghiệm Thu (AC-ID) | Mã PRD (BAC/FR) | Mô Tả Nghiệp Vụ | Mã Test Case (TC-ID) | Tầng Kiểm Thử | Kết Quả Kỳ Vọng |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **AC-01** | `BAC-01` / `FR-01` | Tạo tài nguyên với dữ liệu hợp lệ | `TC-01` | Backend API | HTTP 201, trả về đúng schema JSON |
+| **AC-02** | `BAC-02` / `FR-02` | Bắt lỗi thiếu trường bắt buộc | `TC-02` | Backend API | HTTP 422, trả về trường vi phạm |
+| **AC-03** | `BR-01` | Ràng buộc Unique Constraint | `TC-03` | Database & API | HTTP 409 hoặc database integrity error |
+| **AC-04** | `FR-01` (UI) | Hiển thị đầy đủ 4 trạng thái UI | `TC-04` | Frontend Web | Loading skeleton, error retry, empty CTA, data display |
+| **AC-05** | NFR / Type | Xác thực kiểu dữ liệu nghiêm ngặt | `TC-05` | Frontend Typecheck | Không có lỗi biên dịch TypeScript, 0 `any` |
 
 ---
 

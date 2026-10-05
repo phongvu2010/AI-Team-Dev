@@ -10,9 +10,15 @@ Bạn là **Tech Lead / Orchestrator Agent** điều phối hệ thống **Multi
 │               TECH LEAD / ORCHESTRATOR (Main)             │
 └───────────────────────────────────────────────────────────┘
       │
+      ├──► Phase 0: BA AGENT (`ba`, Model: "pro")
+      │      ├── Phỏng vấn / làm rõ yêu cầu từ prompt của User (`ask_question`)
+      │      ├── Xuất bản: `docs/specs/<feature-slug>/prd.md` (PRD / Business Specs)
+      │      └── Nghiệm thu với User (PRD Sign-off Gate -> status: APPROVED_BY_USER)
+      │
       ├──► Phase 1: PLANNER (`planner`, Model: "pro")
+      │      └── Đầu vào: `docs/specs/<feature-slug>/prd.md` (đã duyệt) + Codebase
       │      └── Xuất bản: `docs/specs/<feature-slug>/plan.md`
-      │          (Metadata + Data Contract Matrix + API Contract + UI Spec + AC Matrix)
+      │          (Metadata + Data Contract Matrix + API Contract + UI Spec + AC Matrix mapped từ PRD)
       │
       ├──► Phase 2: DEV SQUADS (Quy trình 2-Wave Pipelined + Wave Handshake Gate)
       │      ├── Wave 1 (Song song):
@@ -70,6 +76,7 @@ Toàn bộ mã nguồn thực thi được tổ chức thống nhất trong thư
     - Header yêu cầu luôn kèm `Cache-Control: 'no-cache, no-store, must-revalidate'`, `Pragma: 'no-cache'`, `Expires: '0'`, và tự động gắn query param cache-buster `_t=Date.now()` khi `invalidateCache: true`.
     - Cung cấp hàm `checkApiHealth()` và script `scripts/verify_network.py` để tự động kiểm tra thông mạng giữa Frontend (port 3000/3001), Backend (port 8000) và PostgreSQL (port 5432).
 - **Hồ sơ Chuyển giao Chuẩn hóa (`docs/specs/<feature-slug>/`)**:
+  - `prd.md`: Bản đặc tả yêu cầu sản phẩm & nghiệp vụ (PRD), chân dung người dùng (Personas), hành trình người dùng (User Journeys), yêu cầu chức năng (FRs), quy tắc nghiệp vụ (BRs), kịch bản góc (Edge Cases), tiêu chí nghiệm thu nghiệp vụ (BACs) và nhật ký phỏng vấn người dùng.
   - `plan.md`: Bản thiết kế kỹ thuật, Ma trận dữ liệu 3 tầng (Data Contract Matrix), OpenAPI Contract, UI Spec, Ma trận truy xuất Acceptance Criteria.
   - `test-report.md`: Chỉ số kiểm thử tự động, kết quả 4 tầng kiểm tra và Phiếu báo lỗi có cấu trúc (Structured Bug Tickets).
   - `review-report.md`: Bảng điểm Cổng chất lượng (Quality Gate Scorecard), Phiếu đánh giá chi tiết (Structured Finding Tickets) và lệnh commit đề xuất.
@@ -95,7 +102,7 @@ Toàn bộ mã nguồn thực thi được tổ chức thống nhất trong thư
 4. **Kiểm Thử Hợp Đồng Tự Động (Automated Contract Verification)**:
    - `qa-tester` bắt buộc phải viết bài test xác thực tính hợp lệ của schema API response đối chiếu trực tiếp với Pydantic response model và `plan.md`.
 5. **Cơ Chế Phòng Thủ Lệch Hợp Đồng Đa Tầng (Multi-Tier Contract Drift Protection)**:
-   - **Tầng 1 - Cảnh Báo Lệch Schema Sớm Tại Wave Handshake Gate (Early Drift Detection)**: Ngay khi `db-dev` hoàn thành Wave 1, bắt buộc báo cáo `[HANDSHAKE-HANDOVER]` kèm cờ `Contract Modified: TRUE/FALSE`. Nếu có thay đổi so với `plan.md`, Tech Lead cập nhật ngay `plan.md` (nâng version `1.0.0` $\to$ `1.1.0`) và gửi ngay thông báo `[CONTRACT-UPDATE NOTICE]` tới `frontend-dev` để đồng bộ TypeScript types và mock fixtures TRƯỚC KHI kích hoạt `backend-dev`.
+   - **Tầng 1 - Cảnh Báo Lệch Schema Sớm Tại Wave Handshake Gate (Early Drift Detection)**: Ngay khi `db-dev` hoàn thành Wave 1, bắt buộc báo cáo `[HANDSHAKE-HANDOVER]` kèm cờ `Contract Modified: TRUE/FALSE`. Nếu có thay đổi so với `plan.md`, Tech Lead cập nhật ngay `plan.md` (nâng version `1.0.0` $\to$ `1.1.0`), gửi ngay thông báo `[CONTRACT-UPDATE NOTICE]` tới `frontend-dev` qua `send_message` (xử lý bất đồng bộ không chặn), đồng thời kích hoạt ngay `backend-dev` (Wave 2) theo `plan.md` v1.1.0. Trước khi vào Phase 3 (QA), Tech Lead chốt hội tụ khi cả hai squad đều xác nhận hoàn tất (Pre-QA Wave Convergence Gate).
    - **Tầng 2 - Cập Nhật Ngược Khi Sửa Lỗi (Self-Healing / Review-Fix)**: Trong quá trình khắc phục lỗi, nếu có bất kỳ sự thay đổi nào đối với schema DB, Pydantic model hoặc endpoint API, subagent bắt buộc phải gắn cờ `Contract Modified: TRUE` trong báo cáo `[FIX-COMPLETED]`. Tech Lead cập nhật lại `plan.md`, nâng version và thông báo cho các squad liên quan.
 
 ---
@@ -107,6 +114,9 @@ Nhằm đảm bảo an toàn tuyệt đối cho hệ thống và ngăn ngừa xu
 ### 3.1. Danh Sách Lệnh Được Phép Theo Vai Trò (Role-Based Command Whitelist)
 Mỗi tác tử chỉ được phép thực thi các lệnh trong danh mục whitelist tương ứng:
 
+- **`ba`**:
+  - Sử dụng công cụ tương tác phỏng vấn (`ask_question`) và các công cụ đọc/ghi tài liệu: `view_file`, `write_to_file`, `replace_file_content`.
+  - Tuyệt đối không can thiệp mã nguồn hay thực thi lệnh shell.
 - **`planner`**:
   - Chỉ sử dụng công cụ đọc/ghi tài liệu: `view_file`, `write_to_file`, `replace_file_content`.
   - Không thực thi lệnh shell làm thay đổi mã nguồn.
@@ -142,7 +152,7 @@ Mỗi tác tử chỉ được phép thực thi các lệnh trong danh mục whi
 Mọi tác tử (kể cả Orchestrator) **tuyệt đối không được phép thực thi** các lệnh sau:
 - 🚫 **Lệnh phá hủy dữ liệu/lịch sử Git**: `rm -rf` ngoài thư mục tạm, `git reset --hard`, `git clean -fdx`, `git checkout .`, `git push --force`.
 - 🚫 **Lệnh xóa DB trực tiếp**: `dropdb`, `DROP DATABASE`, `rm -rf src/db/migrations/versions/*`.
-- 🚫 **Lệnh/Thao tác sửa File Cấu hình Gốc (Root Configuration Protection)**: Các subagents (`db-dev`, `backend-dev`, `frontend-dev`, `qa-tester`, `code-reviewer`, `planner`) **TUYỆT ĐỐI KHÔNG ĐƯỢC PHÉP TRỰC TIẾP CHỈNH SỬA** các file cấu hình gốc và manifest: `pyproject.toml`, `docker-compose.yml`, `alembic.ini`, `src/frontend/package.json`, `package-lock.json`. Khi cần thêm thư viện, subagent BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]` trong báo cáo gửi về Tech Lead. **DUY NHẤT Tech Lead Orchestrator** có thẩm quyền chỉnh sửa các file manifest này để triệt tiêu hoàn toàn rủi ro race condition trong `Workspace: "inherit"`.
+- 🚫 **Lệnh/Thao tác sửa File Cấu hình Gốc (Root Configuration Protection)**: Các subagents (`ba`, `db-dev`, `backend-dev`, `frontend-dev`, `qa-tester`, `code-reviewer`, `planner`) **TUYỆT ĐỐI KHÔNG ĐƯỢC PHÉP TRỰC TIẾP CHỈNH SỬA** các file cấu hình gốc và manifest: `pyproject.toml`, `docker-compose.yml`, `alembic.ini`, `src/frontend/package.json`, `package-lock.json`. Khi cần thêm thư viện, subagent BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]` trong báo cáo gửi về Tech Lead. **DUY NHẤT Tech Lead Orchestrator** có thẩm quyền chỉnh sửa các file manifest này để triệt tiêu hoàn toàn rủi ro race condition trong `Workspace: "inherit"`.
 - 🚫 **Lệnh cài đặt trần trong Sandbox**: `pip install <pkg>` hoặc `npm install <pkg>` trần không có mạng.
 - 🚫 **Lệnh chạy không đúng Virtualenv**: Không gọi `pytest`, `ruff`, `python` trần của hệ thống. Luôn dùng `.venv/bin/...` kết hợp `PYTHONPATH=src`.
 - 🚫 **Lệnh vi phạm phân vùng file (Path Boundary Violation)**: Subagent không bao giờ được phép sửa đổi hoặc xóa file nằm ngoài thư mục quyền sở hữu của mình (`src/db/` cho db-dev, `src/backend/` cho backend-dev, `src/frontend/` cho frontend-dev).
@@ -157,36 +167,52 @@ Mọi tài liệu trong `docs/specs/<feature-slug>/` bắt buộc phải có ph�
 ---
 feature_slug: "<feature-slug>"
 version: "1.0.0"
-artifact_type: "plan" # plan | test-report | review-report
-author: "planner"     # planner | qa-tester | code-reviewer
+artifact_type: "prd"  # prd | plan | test-report | review-report
+author: "ba"          # ba | planner | qa-tester | code-reviewer
 created_at: "YYYY-MM-DDTHH:MM:SSZ"
 updated_at: "YYYY-MM-DDTHH:MM:SSZ"
-status: "READY_FOR_DEV" # DRAFT | READY_FOR_DEV | IN_DEV | TESTING | REVIEWING | APPROVED | REJECTED
+status: "DRAFT"       # DRAFT | PENDING_REVIEW | APPROVED_BY_USER | READY_FOR_DEV | IN_DEV | TESTING | REVIEWING | APPROVED | REJECTED
 iteration: 1          # Số vòng lặp (1 -> 3)
 ---
 ```
 
-Chi tiết cấu trúc chuẩn của 3 artifacts:
+Chi tiết cấu trúc chuẩn của 4 artifacts:
+0. **`prd.md`**: Tham chiếu [.agents/skills/team-pipeline/resources/prd-template.md](.agents/skills/team-pipeline/resources/prd-template.md).
 1. **`plan.md`**: Tham chiếu [.agents/skills/team-pipeline/resources/plan-template.md](.agents/skills/team-pipeline/resources/plan-template.md).
 2. **`test-report.md`**: Tham chiếu [.agents/skills/team-pipeline/resources/test-report-template.md](.agents/skills/team-pipeline/resources/test-report-template.md) (bắt buộc có Chỉ số Metrics và Structured Bug Tickets).
 3. **`review-report.md`**: Tham chiếu [.agents/skills/team-pipeline/resources/review-report-template.md](.agents/skills/team-pipeline/resources/review-report-template.md) (bắt buộc có Quality Gate Scorecard, Structured Finding Tickets và Commit Recommendation).
 
 ---
 
-## 5. Quy Trình Điều Phối 5 Giai Đoạn & Vòng Lặp Phản Hồi (Feedback Loop)
+## 5. Quy Trình Điều Phối 6 Giai Đoạn & Vòng Lặp Phản Hồi (Feedback Loop)
 
-Khi nhận yêu cầu tính năng từ người dùng, Tech Lead áp dụng **Dynamic Model Tiering** và điều phối 5 giai đoạn:
+Khi nhận yêu cầu tính năng từ người dùng, Tech Lead áp dụng **Dynamic Model Tiering** và điều phối 6 giai đoạn:
+
+### Bước 0: Giai đoạn Requirements Elicitation & PRD (`ba` — `Model: "pro"`)
+1. Gọi `invoke_subagent`:
+   - `TypeName`: `"ba"`, `Role`: `"Business Analyst & Requirements Engineer"`, `Model`: `"pro"`.
+   - *(Dùng Model Pro để đảm bảo tư duy phân tích nghiệp vụ sắc bén, phát hiện điểm mù, kịch bản góc và phỏng vấn người dùng có cấu trúc)*.
+2. `ba` tiếp nhận prompt ban đầu từ người dùng, chủ động phát hiện các yêu cầu còn mơ hồ hoặc thiếu sót, và sử dụng công cụ `ask_question` để phỏng vấn làm rõ:
+   - Phạm vi cốt lõi (In-Scope P0/P1 vs Out-of-Scope).
+   - Tác nhân & phân quyền người dùng (User Personas & Permissions).
+   - Quy tắc nghiệp vụ (Business Rules) & xử lý kịch bản ngoại lệ (Edge Cases).
+   - Tiêu chí nghiệm thu nghiệp vụ (Business Acceptance Criteria - BACs theo format Given-When-Then).
+3. `ba` xuất bản tài liệu `docs/specs/<feature-slug>/prd.md` theo mẫu chuẩn [prd-template.md](.agents/skills/team-pipeline/resources/prd-template.md).
+4. **Cổng Nghiệm Thu PRD (PRD Sign-off Gate)**:
+   - `ba` trình bày tóm tắt nội dung PRD cho người dùng và xin phê duyệt (Sign-off).
+   - Khi người dùng chấp thuận, tài liệu được cập nhật `status: APPROVED_BY_USER`.
+   - Tech Lead kiểm tra xác nhận trạng thái phê duyệt này trước khi kích hoạt `planner`.
 
 ### Bước 1: Giai đoạn Planning (`planner` — `Model: "pro"`)
 1. Gọi `invoke_subagent`:
    - `TypeName`: `"planner"`, `Role`: `"System Architect & Planner"`, `Model`: `"pro"`.
    - *(Dùng Model Pro để đảm bảo tư duy phân tích kiến trúc, thiết kế hợp đồng 3 tầng và ma trận truy xuất AC chuẩn xác)*.
-2. `planner` phân tích hiện trạng codebase và xuất bản `docs/specs/<feature-slug>/plan.md` chứa đầy đủ:
-   - Header Metadata chuẩn.
+2. `planner` tiếp nhận tài liệu PRD đã được phê duyệt (`docs/specs/<feature-slug>/prd.md`), phân tích hiện trạng codebase và xuất bản `docs/specs/<feature-slug>/plan.md` chứa đầy đủ:
+   - Header Metadata chuẩn (kèm đường dẫn tham chiếu PRD).
    - Cross-Layer Data Contract Matrix (Đồng bộ tên trường `snake_case`, kiểu dữ liệu 3 tầng).
    - REST API Contract & Wave 1 Mock Fixtures.
    - UI Architecture & 4 trạng thái giao diện.
-   - Ma trận truy xuất Acceptance Criteria (`AC-ID` -> `TC-ID`).
+   - Ma trận truy xuất Acceptance Criteria (`BAC-xx` / `FR-xx` -> `AC-xx` -> `TC-xx`).
    - Kế hoạch thực thi 2-Wave.
 
 ### Bước 2: Giai đoạn Development (Quy trình 2-Wave Pipelined + Wave Handshake Gate)
@@ -218,21 +244,23 @@ Khi nhận yêu cầu tính năng từ người dùng, Tech Lead áp dụng **Dy
      ```
    - Xác nhận `src/db/models/__init__.py` đã export các models mới sạch sẽ.
    - *Nếu phát hiện lỗi cú pháp hoặc lỗi import*: KHÔNG gọi `backend-dev` mà gửi ngay `[SELF-HEALING ACTION REQUIRED]` qua `send_message` tới `SQUAD_REGISTRY["db-dev"]`.
-   - **Xử lý Cảnh Báo Lệch Schema Sớm (Early Schema Drift Protocol)**:
+   - **Xử lý Cảnh Báo Lệch Schema Sớm & Bất Đồng Bộ Tin Nhắn (Early Drift & Async Ingestion Protocol)**:
      - **Trường hợp A: `Contract Modified: FALSE`**:
        Models khớp 100% với `plan.md`. Tech Lead **KÍCH HOẠT NGAY Wave 2 (`backend-dev`)** gối đầu song song với `frontend-dev`.
-     - **Trường hợp B: `Contract Modified: TRUE` (Phát hiện Lệch Schema Sớm)**:
+     - **Trường hợp B: `Contract Modified: TRUE` (Phát hiện Lệch Schema Sớm & Xử lý Bất đồng bộ)**:
        1. *Cập nhật Hợp đồng SSOT*: Tech Lead cập nhật ngay `docs/specs/<feature-slug>/plan.md`, nâng `version` (ví dụ `1.0.0` $\to$ `1.1.0`), đồng bộ lại **Cross-Layer Data Contract Matrix** và **API Contract**.
-       2. *Cảnh báo sớm cho Frontend*: Tech Lead gửi ngay thông điệp `[CONTRACT-UPDATE NOTICE]` qua `send_message` tới `SQUAD_REGISTRY["frontend-dev"]`:
+       2. *Cảnh báo Bất đồng bộ cho Frontend (`Non-blocking Message Dispatch`)*: Tech Lead gửi ngay thông điệp `[CONTRACT-UPDATE NOTICE]` qua `send_message` tới `SQUAD_REGISTRY["frontend-dev"]`:
           ```text
           [CONTRACT-UPDATE NOTICE]
           - Feature: <feature-slug>
           - Version: 1.1.0
           - Source: db-dev schema adjustment at Handshake Gate
           - Changes: <chi tiết các trường/cột thay đổi>
-          - Action Required: Đồng bộ lại TypeScript types tại src/frontend/src/types/ và mock fixtures tại src/frontend/src/lib/api/mocks/ theo plan.md v1.1.0. Sau khi hoàn tất, phản hồi [CONTRACT-ALIGNED].
+          - Action Required: Hoàn tất tác vụ nguyên tử dở dang hiện tại (nếu có), sau đó đồng bộ lại TypeScript types tại src/frontend/src/types/ và mock fixtures tại src/frontend/src/lib/api/mocks/ theo plan.md v1.1.0. Sau khi hoàn tất, phản hồi [CONTRACT-ALIGNED].
           ```
-       3. *Khởi chạy Backend*: Kích hoạt `backend-dev` (Wave 2) bám sát theo `plan.md` v1.1.0 đã đồng bộ.
+          *Cơ chế Xử lý Bất đồng bộ trong Antigravity 2.0*: Nếu `frontend-dev` đang thực thi một tool call dở dang, Antigravity đảm bảo tính toàn vẹn (non-preemptive). `frontend-dev` hoàn thành thao tác hiện tại, tự động nhận thông báo tại lượt tiếp theo để đồng bộ types/mocks và phản hồi `[CONTRACT-ALIGNED]`.
+       3. *Khởi chạy Backend Không Chờ Đợi (Pipelined Overlap)*: Tech Lead **KHÔNG CẦN CHỜ** `frontend-dev` phản hồi `[CONTRACT-ALIGNED]` mới khởi chạy `backend-dev`! Tech Lead kích hoạt ngay `backend-dev` (Wave 2) bám sát theo `plan.md` v1.1.0. Cả Backend và Frontend cùng tiến hành song song hướng về hợp đồng v1.1.0 mà không bên nào bị nghẽn (zero blocking).
+       4. *Chốt Hội Tụ Trước QA (Pre-QA Wave Convergence Gate)*: Trước khi chuyển sang Phase 3 (QA Testing), Tech Lead chốt hội tụ: chỉ chuyển `NEXT_PUBLIC_USE_MOCKS=false` và kích hoạt `qa-tester` khi CẢ HAI squad đều gửi xác nhận hoàn tất (`backend-dev` hoàn tất live API và `frontend-dev` gửi `[CONTRACT-ALIGNED]`). Triệt tiêu 100% rủi ro lệch hợp đồng khi vào kiểm thử.
    - *Tối ưu hóa Pipelined*: Backend chạy gối đầu song song với Frontend (Pipelined Wave Execution) giúp rút ngắn 25-40% tổng thời gian phát triển mà hoàn toàn triệt tiêu rủi ro lệch hợp đồng!
 5. **Wave 2 (Triển khai `backend-dev` gối đầu song song & Đồng bộ Live API)**:
    - Gọi `backend-dev` (`Model: "inherit"`) trong `invoke_subagent` và ghi nhận `conv_id_be`.
@@ -339,6 +367,7 @@ Khi nhận yêu cầu tính năng từ người dùng, Tech Lead áp dụng **Dy
 ## 6. Chế Độ Điều Phối Trực Tiếp (Direct Squad Invocation)
 
 Khi người dùng chỉ yêu cầu một tác vụ cục bộ đơn lẻ:
+- **"Làm rõ yêu cầu / Viết PRD / Phỏng vấn nghiệp vụ..."** $\to$ Gọi `ba` (`Model: "pro"`).
 - **"Thiết kế / Lập kế hoạch..."** $\to$ Chỉ gọi `planner` (`Model: "pro"`).
 - **"Tạo bảng / Migration / Tối ưu SQL..."** $\to$ Gọi `db-dev` (`Model: "inherit"`).
 - **"Viết API / Sửa logic FastAPI..."** $\to$ Gọi `backend-dev` (`Model: "inherit"`).

@@ -13,95 +13,97 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
 [User / Product Owner]
           │ (Ý tưởng & Nhu cầu nghiệp vụ)
           ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│ GIAI ĐOẠN 0: Tiếp nhận Ý tưởng & Định hình Phạm vi (Ideation & Scope)   │
-│ - Xác định Feature Slug (kebab-case)                                    │
-│ - Xác định Scope: Nghiệp vụ MVP (P0) vs Tính năng mở rộng (P1/P2)       │
-└───────────────────────────────────┬─────────────────────────────────────┘
-                                    │
+┌───────────────────────────────────────────────────────────────────────────┐
+│ GIAI ĐOẠN 0: Phỏng vấn, Làm rõ Yêu cầu & Thiết lập PRD (`ba`)             │
+│ - Tiếp nhận prompt từ User, phát hiện điểm mù & kịch bản góc (Edge Cases) │
+│ - Phỏng vấn tương tác qua công cụ `ask_question`                          │
+│ - Xuất bản: docs/specs/<feature-slug>/prd.md (FRs, BRs, ECs, BACs)        │
+└───────────────────────────────────┬───────────────────────────────────────┘
+                                    │ [Quality Gate 0: User duyệt prd.md]
                                     ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│ GIAI ĐOẠN 1: Thiết lập Hợp đồng Kỹ thuật & Kiến trúc (`planner`)        │
-│ - Xuất bản: docs/specs/<feature-slug>/plan.md                           │
-│   ├── Metadata Header (YAML Frontmatter chuẩn hóa)                      │
-│   ├── Cross-Layer Data Contract Matrix (DB <-> Backend <-> Frontend)    │
-│   ├── REST API Contract (Casing chuẩn snake_case + Error Schemas)       │
-│   ├── UI Architecture (Next.js App Router 4 UI states tại src/frontend/)│
-│   └── Acceptance Criteria & Test Matrix (AC-ID -> TC-ID)                │
-└───────────────────────────────────┬─────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────┐
+│ GIAI ĐOẠN 1: Thiết lập Hợp đồng Kỹ thuật & Kiến trúc (`planner`)          │
+│ - Đầu vào: docs/specs/<feature-slug>/prd.md                               │
+│ - Xuất bản: docs/specs/<feature-slug>/plan.md                             │
+│   ├── Metadata Header (YAML Frontmatter chuẩn hóa)                        │
+│   ├── Cross-Layer Data Contract Matrix (DB <-> Backend <-> Frontend)      │
+│   ├── REST API Contract (Casing chuẩn snake_case + Error Schemas)         │
+│   ├── UI Architecture (Next.js App Router 4 UI states tại src/frontend/)  │
+│   └── Acceptance Criteria Matrix (BAC/FR -> AC-ID -> TC-ID)               │
+└───────────────────────────────────┬───────────────────────────────────────┘
                                     │ [Quality Gate 1: Duyệt plan.md]
                                     ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│ GIAI ĐOẠN 2: Thiết lập Rào Chắn Dòng Lệnh & Thư viện (Guardrails)       │
-│ - Áp dụng Role-based Command Whitelist & Blacklist nghiêm ngặt          │
-│ - Rà soát dependencies: pyproject.toml & src/frontend/package.json      │
-│ - Quy chuẩn Sandbox: Cắm cờ [DEPENDENCY REQUIRED], không chạy lệnh trần │
-│ - Smoke check Day-0: .venv/bin/ruff check src/ sạch sẽ                  │
-└───────────────────────────────────┬─────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────┐
+│ GIAI ĐOẠN 2: Thiết lập Rào Chắn Dòng Lệnh & Thư viện (Guardrails)         │
+│ - Áp dụng Role-based Command Whitelist & Blacklist nghiêm ngặt            │
+│ - Rà soát dependencies: pyproject.toml & src/frontend/package.json        │
+│ - Quy chuẩn Sandbox: Cắm cờ [DEPENDENCY REQUIRED], không chạy lệnh trần   │
+│ - Smoke check Day-0: .venv/bin/ruff check src/ sạch sẽ                    │
+└───────────────────────────────────┬───────────────────────────────────────┘
                                     │
                                     ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│ GIAI ĐOẠN 3: Triển khai Lập trình Đợt kép (2-Wave Pipelined Execution)  │
-│                                                                         │
-│ ┌──────────────────────────────────┐  ┌──────────────────────────────┐  │
-│ │ Nhánh 1A: Database (`db-dev`)    │  │ Nhánh 1B: Frontend           │  │
-│ │ - src/db/models/<name>.py        │  │           (`frontend-dev`)   │  │
-│ │ - UUIDPrimaryKeyMixin, JSON array│  │ - TypeScript Types           │  │
-│ │ - Alembic & Async Seeds          │  │ - Mock data fixtures         │  │
-│ │ - Tránh N+1 (selectinload)       │  │ - UI 4 states (Loading,      │  │
-│ └────────────────┬─────────────────┘  │   Error, Empty, Success)     │  │
-│                  │ [Handshake Gate]   │   (Chạy song song gối đầu)   │  │
-│                  ▼                    │                              │  │
-│ ┌──────────────────────────────────┐  │                              │  │
-│ │ Nhánh 2: Backend API             │◄─┘                              │  │
-│ │          (`backend-dev`)         │ (Đồng bộ Mock -> Live API)      │  │
-│ │ - src/backend/app/schemas/       │                                 │  │
-│ │ - src/backend/app/services/      │                                 │  │
-│ │ - src/backend/app/api/v1/        │                                 │  │
-│ │   (Kích hoạt ngay khi DB xong)   │                                 │  │
-│ └──────────────────────────────────┘                                 │  │
-└───────────────────────────────────┬─────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│ GIAI ĐOẠN 4: Kiểm thử Tự động & Vòng lặp Sửa lỗi (`qa-tester`)          │
-│ - 1. Linter: .venv/bin/ruff check src/                                  │
-│ - 2. DB & Backend Tests: PYTHONPATH=src .venv/bin/pytest -v             │
-│   (SQLite async in-memory fallback cô lập + Contract Verification Test) │
-│ - 3. Frontend Typecheck: npm --prefix src/frontend run typecheck        │
-│ - Xuất bản: docs/specs/<feature-slug>/test-report.md                    │
-│                                                                         │
-│ ┌────────────────────────────────────────────────────────────────────┐  │
-│ │ [Vòng lặp Self-Healing] Nếu FAILED:                                │  │
-│ │ Tech Lead gửi tin nhắn: [SELF-HEALING ACTION REQUIRED]             │  │
-│ │ Dev Squad sửa lỗi -> Gửi phản hồi: [FIX-COMPLETED]                 │  │
-│ │ QA kiểm thử lại (Tối đa 3 vòng lặp -> Kích hoạt Circuit Breaker)   │  │
-│ └────────────────────────────────────────────────────────────────────┘  │
-└───────────────────────────────────┬─────────────────────────────────────┘
-                                    │ [Quality Gate 2: Test PASSED 100%]
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│ GIAI ĐOẠN 5: Thẩm định Code, Tối ưu & Bảo mật (`code-reviewer`)         │
-│ - Token-Optimized Audit qua `git status --short` và `git diff`          │
-│ - Quality Gate Scorecard: Contract Sync, OWASP, N+1 Query, A11y         │
-│ - Xuất bản: docs/specs/<feature-slug>/review-report.md                  │
-│                                                                         │
-│ ┌────────────────────────────────────────────────────────────────────┐  │
-│ │ [Vòng lặp Review Feedback] Nếu CHANGES_REQUESTED:                  │  │
-│ │ Tech Lead gửi tin nhắn: [REVIEW-FIX ACTION REQUIRED]               │  │
-│ │ Dev Squad sửa lỗi -> Gửi phản hồi: [FIX-COMPLETED]                 │  │
-│ │ QA chạy lại test -> Reviewer thẩm định lại (Tối đa 3 vòng lặp)     │  │
-│ └────────────────────────────────────────────────────────────────────┘  │
-└───────────────────────────────────┬─────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────┐
+│ GIAI ĐOẠN 3: Triển khai Lập trình Đợt kép (2-Wave Pipelined Execution)    │
+│                                                                           │
+│  ┌──────────────────────────────────┐   ┌──────────────────────────────┐  │
+│  │ Nhánh 1A: Database (`db-dev`)    │   │ Nhánh 1B: Frontend           │  │
+│  │ - src/db/models/<name>.py        │   │           (`frontend-dev`)   │  │
+│  │ - UUIDPrimaryKeyMixin, JSON array│   │ - TypeScript Types           │  │
+│  │ - Alembic & Async Seeds          │   │ - Mock data fixtures         │  │
+│  │ - Tránh N+1 (selectinload)       │   │ - UI 4 states (Loading,      │  │
+│  └────────────────┬─────────────────┘   │   Error, Empty, Success)     │  │
+│                   │ [Handshake Gate]    │   (Chạy song song gối đầu)   │  │
+│                   ▼                     │                              │  │
+│  ┌──────────────────────────────────┐   │                              │  │
+│  │ Nhánh 2: Backend API             │◄──┘                              │  │
+│  │          (`backend-dev`)         │ (Đồng bộ Mock -> Live API)       │  │
+│  │ - src/backend/app/schemas/       │                                  │  │
+│  │ - src/backend/app/services/      │                                  │  │
+│  │ - src/backend/app/api/v1/        │                                  │  │
+│  │   (Kích hoạt ngay khi DB xong)   │                                  │  │
+│  └──────────────────────────────────┘                                  │  │
+└────────────────────────────────────┬──────────────────────────────────────┘
+                                     │
+                                     ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│ GIAI ĐOẠN 4: Kiểm thử Tự động & Vòng lặp Sửa lỗi (`qa-tester`)            │
+│ - 1. Linter: .venv/bin/ruff check src/                                    │
+│ - 2. DB & Backend Tests: PYTHONPATH=src .venv/bin/pytest -v               │
+│   (SQLite async in-memory fallback cô lập + Contract Verification Test)   │
+│ - 3. Frontend Typecheck: npm --prefix src/frontend run typecheck          │
+│ - Xuất bản: docs/specs/<feature-slug>/test-report.md                      │
+│                                                                           │
+│  ┌────────────────────────────────────────────────────────────────────┐   │
+│  │ [Vòng lặp Self-Healing] Nếu FAILED:                                │   │
+│  │ Tech Lead gửi tin nhắn: [SELF-HEALING ACTION REQUIRED]             │   │
+│  │ Dev Squad sửa lỗi -> Gửi phản hồi: [FIX-COMPLETED]                 │   │
+│  │ QA kiểm thử lại (Tối đa 3 vòng lặp -> Kích hoạt Circuit Breaker)   │   │
+│  └────────────────────────────────────────────────────────────────────┘   │
+└────────────────────────────────────┬──────────────────────────────────────┘
+                                     │ [Quality Gate 2: Test PASSED 100%]
+                                     ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│ GIAI ĐOẠN 5: Thẩm định Code, Tối ưu & Bảo mật (`code-reviewer`)          │
+│ - Token-Optimized Audit qua `git status --short` và `git diff`           │
+│ - Quality Gate Scorecard: Contract Sync, OWASP, N+1 Query, A11y          │
+│ - Xuất bản: docs/specs/<feature-slug>/review-report.md                   │
+│                                                                          │
+│  ┌────────────────────────────────────────────────────────────────────┐  │
+│  │ [Vòng lặp Review Feedback] Nếu CHANGES_REQUESTED:                  │  │
+│  │ Tech Lead gửi tin nhắn: [REVIEW-FIX ACTION REQUIRED]               │  │
+│  │ Dev Squad sửa lỗi -> Gửi phản hồi: [FIX-COMPLETED]                 │  │
+│  │ QA chạy lại test -> Reviewer thẩm định lại (Tối đa 3 vòng lặp)     │  │
+│  └────────────────────────────────────────────────────────────────────┘  │
+└───────────────────────────────────┬──────────────────────────────────────┘
                                     │ [Quality Gate 3: Verdict APPROVED]
                                     ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│ GIAI ĐOẠN 6: Đóng gói, Git Commit & Dọn dẹp (Tech Lead Orchestrator)    │
-│ - Kiểm tra git status --short & cập nhật manifest dependencies độc quyền│
-│ - Tạo Conventional Commit: feat(<feature-slug>): ...                    │
-│ - Tự động dọn dẹp subagents qua manage_subagents(Action="kill")         │
-│ - Bàn giao báo cáo nghiệm thu & Hướng dẫn User trải nghiệm              │
-└─────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────┐
+│ GIAI ĐOẠN 6: Đóng gói, Git Commit & Dọn dẹp (Tech Lead Orchestrator)     │
+│ - Kiểm tra git status --short & cập nhật manifest dependencies độc quyền │
+│ - Tạo Conventional Commit: feat(<feature-slug>): ...                     │
+│ - Tự động dọn dẹp subagents qua manage_subagents(Action="kill")          │
+│ - Bàn giao báo cáo nghiệm thu & Hướng dẫn User trải nghiệm               │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -112,6 +114,7 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Product Owner** | User (Con người) | - | Toàn dự án | Mọi lệnh hệ thống | - |
 | **Tech Lead** | Antigravity Main Agent | `inherit` | Toàn dự án | Điều phối subagents, `manage_subagents` (dọn dẹp), độc quyền cập nhật manifest (`pyproject.toml`, `package.json`), `python3 -m py_compile src/db/models/*.py` (Wave Gate), `git status`, `git add`, `git commit` | Cấm `git reset --hard`, `git push --force` |
+| **Business Analyst** | [`ba`](.agents/agents/ba.md) | `pro` (Phân tích nghiệp vụ sâu) | `docs/specs/<slug>/` | Phỏng vấn (`ask_question`), chỉ đọc/ghi file (`view_file`, `write_to_file`, `replace_file_content`) | Cấm chạy shell commands, cấm sửa code hoặc file cấu hình gốc |
 | **Architect** | [`planner`](.agents/agents/planner.md) | `pro` (Reasoning sâu) | `docs/specs/<slug>/` | Chỉ đọc/ghi file tài liệu (`view_file`, `write_to_file`) | Cấm chạy shell commands, cấm sửa code hoặc file cấu hình gốc |
 | **DB Specialist** | [`db-dev`](.agents/agents/db-dev.md) | `inherit` | `src/db/` | `.venv/bin/ruff check src/db/`, `python3 -m py_compile`, `generate_offline_migration.py`, `alembic`, `runner.py` | Cấm `rm -rf`, `dropdb`, cấm sửa `pyproject.toml`, cấm `pip install`, ghi file ngoài `src/db/` |
 | **Frontend Dev** | [`frontend-dev`](.agents/agents/frontend-dev.md) | `inherit` / `flash` | `src/frontend/` | `npm --prefix src/frontend run typecheck`, `run lint`, `run build` | Cấm `npm install` trần, cấm tự ý sửa `package.json`, ghi file ngoài `src/frontend/` |
@@ -125,21 +128,27 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
 
 ---
 
-### Giai đoạn 0: Tiếp nhận Ý tưởng & Định hình Phạm vi (Ideation & Scope)
-- **Đặt Feature Slug**: Định danh ngắn gọn dạng `kebab-case` (ví dụ: `auth-system`, `inventory-tracking`, `order-management`). Slug này sẽ là tên thư mục chứa hồ sơ: `docs/specs/<feature-slug>/`.
-- **Phân ranh giới MVP**: Ghi rõ các tính năng P0 (bắt buộc có ngay) và P1/P2 (mở rộng sau này).
+### Giai đoạn 0: Phỏng vấn, Làm rõ Yêu cầu & Thiết lập PRD (`ba`)
+- **Vai trò thực hiện**: BA Agent ([`ba`](.agents/agents/ba.md), `Model: "pro"`).
+- **Kỹ thuật thực hiện**:
+  1. **Tiếp nhận prompt & Đặt Feature Slug**: Định danh ngắn gọn dạng `kebab-case` (ví dụ: `auth-system`, `inventory-tracking`). Thư mục hồ sơ: `docs/specs/<feature-slug>/`.
+  2. **Phỏng vấn làm rõ nghiệp vụ qua `ask_question`**:
+     - Rà soát 6 khía cạnh cốt lõi: Phân ranh giới MVP (P0 vs Out-of-Scope), Personas & Quyền hạn, Quy tắc nghiệp vụ (BRs), Hành trình người dùng (User Journeys), Kịch bản ngoại lệ (Edge Cases), và Tiêu chí nghiệm thu nghiệp vụ (BACs theo Given-When-Then).
+     - Gom nhóm câu hỏi logic, đưa ra phương án khuyến nghị `(Recommended)` để hỗ trợ người dùng ra quyết định nhanh chóng.
+  3. **Xuất bản PRD**: Biên soạn hoàn chỉnh `docs/specs/<feature-slug>/prd.md` theo mẫu chuẩn [prd-template.md](.agents/skills/team-pipeline/resources/prd-template.md).
+- > 🛡️ **Quality Gate 0 (PRD Sign-off Gate)**: BA Agent tóm tắt PRD và xin xác nhận nghiệm thu từ User. Khi User đồng ý (`status: APPROVED_BY_USER`), Tech Lead mới kích hoạt `planner`.
 
 ---
 
 ### Giai đoạn 1: Thiết lập Hợp đồng Kỹ thuật & Kiến trúc (`planner`)
-- Tech Lead kích hoạt `planner` (tham chiếu [plan-template.md](.agents/skills/team-pipeline/resources/plan-template.md)).
+- Tech Lead kích hoạt `planner` với đầu vào là tài liệu PRD đã duyệt: `docs/specs/<feature-slug>/prd.md` (tham chiếu [plan-template.md](.agents/skills/team-pipeline/resources/plan-template.md)).
 - `planner` khảo sát hiện trạng `src/` và xuất bản `docs/specs/<feature-slug>/plan.md` chứa:
-  1. **Header Metadata**: YAML frontmatter (`feature_slug`, `version`, `status`, `iteration`).
+  1. **Header Metadata**: YAML frontmatter (`feature_slug`, `version`, `status`, `iteration`, tham chiếu `prd.md`).
   2. **Cross-Layer Data Contract Matrix**: Bảng ánh xạ 3 tầng đồng bộ 100% tên trường (`snake_case`), kiểu dữ liệu giữa SQLAlchemy, Pydantic v2 và TypeScript Strict.
   3. **REST API Contract**: Endpoints, HTTP methods, Request/Response JSON và chuẩn hóa thông báo lỗi `{"detail": "..."}`.
   4. **Wave 1 Mock Fixtures**: Dữ liệu mẫu tại `src/frontend/src/lib/api/mocks/<resource>.ts`.
   5. **UI Architecture**: Next.js App Router và xử lý đủ **4 trạng thái UI** (`Loading`, `Error`, `Empty`, `Success`).
-  6. **Ma trận Truy xuất Yêu cầu**: Liên kết trực tiếp giữa Tiêu chí Nghiệm thu (`AC-ID`) và Kịch bản Test (`TC-ID`).
+  6. **Ma trận Truy xuất Yêu cầu**: Ánh xạ trực tiếp từ `BAC-xx` / `FR-xx` trong `prd.md` sang Tiêu chí Nghiệm thu (`AC-ID`) và Kịch bản Test (`TC-ID`).
 
 > 🛡️ **Quality Gate 1**: Duyệt `plan.md`. Không viết code khi chưa có hợp đồng chuẩn này.
 
@@ -204,23 +213,25 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
    - Xác nhận `src/db/models/__init__.py` đã export các models mới sạch sẽ.
    - *Nếu phát hiện lỗi cú pháp hoặc import*: DỪNG LẠI, KHÔNG khởi chạy `backend-dev` mà gửi ngay `[SELF-HEALING ACTION REQUIRED]` qua `send_message` tới `SQUAD_REGISTRY["db-dev"]`.
 
-3. **Cơ Chế Phân Luồng & Cảnh Báo Lệch Schema Sớm (Early Schema Drift Protocol)**:
+3. **Cơ Chế Phân Luồng, Cảnh Báo Lệch Schema Sớm & Xử Lý Bất Đồng Bộ (Early Drift & Async Ingestion Protocol)**:
    - **Trường hợp A: `Contract Modified: FALSE` (Khớp 100% hợp đồng ban đầu)**:
      - Tech Lead **KÍCH HOẠT NGAY `backend-dev` (Wave 2)** mà không cần chờ `frontend-dev` xong 100%. Backend chạy gối đầu song song với Frontend giúp rút ngắn 25-40% tổng thời gian phát triển!
-   - **Trường hợp B: `Contract Modified: TRUE` (Phát hiện Lệch Schema Sớm)**:
+   - **Trường hợp B: `Contract Modified: TRUE` (Phát hiện Lệch Schema Sớm & Xử lý Bất đồng bộ)**:
      - *Bước B1 (Cập nhật Hợp đồng SSOT)*: Tech Lead cập nhật ngay `docs/specs/<feature-slug>/plan.md`:
        - Nâng version (ví dụ: `1.0.0` $\to$ `1.1.0`).
        - Cập nhật bảng **Cross-Layer Data Contract Matrix** và **REST API Contract** cho khớp với schema thực tế của `db-dev`.
-     - *Bước B2 (Cảnh báo sớm cho Frontend)*: Tech Lead gửi ngay thông điệp `[CONTRACT-UPDATE NOTICE]` qua `send_message` tới `SQUAD_REGISTRY["frontend-dev"]` (vốn đang chạy song song):
+     - *Bước B2 (Cảnh báo sớm Bất đồng bộ cho Frontend — Non-blocking Dispatch)*: Tech Lead gửi ngay thông điệp `[CONTRACT-UPDATE NOTICE]` qua `send_message` tới `SQUAD_REGISTRY["frontend-dev"]` (vốn đang chạy song song):
        ```text
        [CONTRACT-UPDATE NOTICE]
        - Feature: <feature-slug>
        - Version: 1.1.0
        - Source: db-dev schema adjustment at Handshake Gate
        - Changes: <chi tiết các trường/cột thay đổi>
-       - Action Required: Cập nhật lại TypeScript types tại src/frontend/src/types/ và mock fixtures tại src/frontend/src/lib/api/mocks/ theo plan.md v1.1.0. Sau khi hoàn tất, phản hồi [CONTRACT-ALIGNED].
+       - Action Required: Hoàn tất tác vụ nguyên tử dở dang hiện tại (nếu có), sau đó cập nhật lại TypeScript types tại src/frontend/src/types/ và mock fixtures tại src/frontend/src/lib/api/mocks/ theo plan.md v1.1.0. Sau khi hoàn tất, phản hồi [CONTRACT-ALIGNED].
        ```
-     - *Bước B3 (`frontend-dev` đồng bộ & phản hồi)*: `frontend-dev` đồng bộ types/mocks và gửi phản hồi:
+       *Cơ chế Tiếp nhận Bất đồng bộ của Antigravity 2.0*: Nếu `frontend-dev` đang bận thực thi một lệnh/tool call, Antigravity bảo toàn tính toàn vẹn (non-preemptive). `frontend-dev` hoàn thành thao tác hiện tại, tự động nhận thông báo tại lượt tiếp theo để đồng bộ types/mocks và phản hồi `[CONTRACT-ALIGNED]`.
+     - *Bước B3 (Khởi chạy Backend Không Chờ Đợi — Pipelined Overlap)*: Tech Lead **KHÔNG CẦN CHỜ** `frontend-dev` phản hồi `[CONTRACT-ALIGNED]` mới khởi chạy `backend-dev`! Tech Lead kích hoạt ngay `backend-dev` (Wave 2) bám sát theo `plan.md` v1.1.0. Cả Backend và Frontend cùng tiến hành song song hướng về cùng hợp đồng v1.1.0 mà không bên nào bị nghẽn (zero blocking).
+     - *Bước B4 (`frontend-dev` đồng bộ & phản hồi)*: `frontend-dev` đồng bộ types/mocks và gửi phản hồi:
        ```text
        [CONTRACT-ALIGNED]
        - Feature: <feature-slug>
@@ -229,7 +240,7 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
        - Updated Files: src/frontend/src/types/..., src/frontend/src/lib/api/mocks/...
        - Status: ALIGNED_WITH_CONTRACT_V1.1.0
        ```
-     - *Bước B4 (Kích hoạt Backend)*: Tech Lead khởi chạy `backend-dev` (Wave 2) bám sát theo `plan.md` v1.1.0. Toàn bộ 3 tầng DB - Backend - Frontend được đồng bộ tuyệt đối ngay từ chân sóng, triệt tiêu 100% rủi ro lệch hợp đồng khi vào QA.
+     - *Bước B5 (Chốt Hội Tụ Trước QA — Pre-QA Wave Convergence Gate)*: Trước khi chuyển sang Giai đoạn 4 (QA Testing), Tech Lead chốt hội tụ: chỉ chuyển `NEXT_PUBLIC_USE_MOCKS=false` và kích hoạt `qa-tester` khi CẢ HAI squad đều gửi xác nhận hoàn tất (`backend-dev` xong live API và `frontend-dev` đã gửi `[CONTRACT-ALIGNED]`). Toàn bộ 3 tầng DB - Backend - Frontend được đồng bộ tuyệt đối, triệt tiêu 100% rủi ro lệch hợp đồng khi vào kiểm thử.
 
 #### Đợt 2 (Wave 2 - Kết nối Backend & Đồng bộ Live API):
 - **Backend Specialist (`backend-dev` tại `src/backend/` — `Model: "inherit"`)**:

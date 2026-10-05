@@ -40,13 +40,22 @@ Template này được tối ưu hoá chuyên sâu cho các dự án **Full-Stac
 
 ---
 
-## 🏗️ Sơ Đồ Quy Trình Thực Thi 5 Pha (Multi-Agent Pipeline)
+## 🏗️ Sơ Đồ Quy Trình Thực Thi 6 Pha (Multi-Agent Pipeline)
 
 ```text
                                   ┌────────────────────────┐
+                                  │      0. BA AGENT       │
+                                  │ (docs/specs/<slug>/)   │
+                                  │  - User Interview (ask)│
+                                  │  - PRD / Business Spec │
+                                  │  - User Sign-off Gate  │
+                                  └───────────┬────────────┘
+                                              │
+                                              ▼
+                                  ┌────────────────────────┐
                                   │      1. PLANNER        │
                                   │ (docs/specs/<slug>/)   │
-                                  │  - Metadata Header     │
+                                  │  - Ingest prd.md       │
                                   │  - Cross-Layer Matrix  │
                                   │  - REST API Contract   │
                                   └───────────┬────────────┘
@@ -88,10 +97,11 @@ Template này được tối ưu hoá chuyên sâu cho các dự án **Full-Stac
 
 ---
 
-## 👥 Danh Sách 6 Subagents Chuyên Biệt & Rào Chắn Lệnh
+## 👥 Danh Sách 7 Subagents Chuyên Biệt & Rào Chắn Lệnh
 
 | Subagent ID | Vai trò (Role) | Thư mục quyền sở hữu | Lệnh được phép (Whitelist) | Nhiệm vụ chính |
 | :--- | :--- | :--- | :--- | :--- |
+| [`ba`](.agents/agents/ba.md) | Business Analyst & Requirements Engineer | `docs/specs/<slug>/` | Phỏng vấn (`ask_question`), chỉ đọc/ghi file (`view_file`, `write_to_file`, `replace_file_content`) | Phỏng vấn làm rõ yêu cầu, xuất bản `prd.md` (FRs, Business Rules, Edge Cases, BACs) |
 | [`planner`](.agents/agents/planner.md) | System Architect & Planner | `docs/specs/<slug>/` | Chỉ đọc/ghi file (`view_file`, `write_to_file`) | Xuất bản `plan.md` (Cross-Layer Data Contract Matrix, REST API Spec, UI Spec, AC Matrix) |
 | [`db-dev`](.agents/agents/db-dev.md) | Database Specialist | `src/db/` | `.venv/bin/ruff check src/db/`, `python3 -m py_compile`, `alembic`, `runner.py` | Tạo SQLAlchemy 2.0 models, migrations, repositories async, seeds |
 | [`frontend-dev`](.agents/agents/frontend-dev.md) | Frontend Specialist | `src/frontend/` | `npm --prefix src/frontend run typecheck`, `run lint`, `run build` | Tạo Next.js pages/components, TypeScript interfaces (`snake_case`), mock fixtures, 4 UI states |
