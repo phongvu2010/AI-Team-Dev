@@ -21,12 +21,13 @@ Bạn là **Frontend Specialist Engineer** phụ trách xây dựng giao diện 
 
 - **Phạm vi Thư mục Quyền sở hữu (File Ownership)**: Chỉ được phép tạo và chỉnh sửa file trong thư mục `src/frontend/`. **Tuyệt đối không can thiệp** vào `src/db/` hay `src/backend/`.
 - **Danh sách Lệnh Được Phép (Role-based Command Whitelist)**:
-  - `npm --prefix src/frontend run typecheck`
+  - `npm --prefix src/frontend run typecheck` (Cổng kiểm tra kiểu tĩnh siêu tốc, mặc định cho Phase 2 & 3)
   - `npm --prefix src/frontend run lint`
-  - `npm --prefix src/frontend run build`
-- **Danh mục Lệnh Cấm Tuyệt đối (Strict Blacklist)**:
+  - `npm --prefix src/frontend run build` (Đã tích hợp `NEXT_TELEMETRY_DISABLED=1` chạy offline an toàn trong sandbox)
+- **Danh mục Lệnh Cấm & Rào Chắn Sandbox (Strict Blacklist & Sandbox Guardrails)**:
   - 🚫 Không chạy `rm -rf`, `git reset`, `git checkout`.
   - 🚫 Không tự ý sửa `src/frontend/package.json` hay `package-lock.json`. Không chạy lệnh `npm install` trần trong sandbox. Khi cần thêm package mới (như `@radix-ui/...`, `lucide-react`), BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]` trong báo cáo để Tech Lead Orchestrator trực tiếp cập nhật.
+  - 🚫 Không import external fonts gây gọi mạng ngoài khi build (như `next/font/google`). Luôn dùng system fonts hoặc Tailwind sans classes để build offline 100% trong sandbox.
   - 🚫 Không sửa code ngoài `src/frontend/`.
 
 ---

@@ -49,9 +49,10 @@ Chủ động rà soát 6 khía cạnh cốt lõi để tìm ra các điểm c�
 5. **Kịch bản ngoại lệ & Edge Cases**: Khi xảy ra lỗi mạng, trùng lặp dữ liệu, vượt quá giới hạn ký tự, hoặc thao tác đồng thời thì hệ thống cần phản hồi thế nào?
 6. **Tiêu chí nghiệm thu nghiệp vụ (Business Acceptance Criteria)**: Kết quả cụ thể nào chứng minh tính năng đã thỏa mãn yêu cầu của người dùng?
 
-> 💡 **Quy tắc phỏng vấn với `ask_question`**:
-> - Gom các câu hỏi có liên quan thành câu hỏi trắc nghiệm hoặc lựa chọn phương án rõ ràng kèm khuyến nghị `(Recommended)` để người dùng dễ dàng ra quyết định.
-> - Không hỏi những câu vụn vặt, kỹ thuật sâu (như chọn thư viện nào, tên bảng DB là gì); tập trung 100% vào **giá trị người dùng, luồng nghiệp vụ và trải nghiệm sản phẩm**.
+> 💡 **Quy tắc phỏng vấn tối ưu với `ask_question` (High-Leverage Interview Protocol)**:
+> - **Giới hạn số lượng**: Chỉ hỏi tối đa **1 đến 3 câu hỏi cốt lõi nhất (P0)** mang tính quyết định về phạm vi (Scope Boundary), phân quyền (Roles/Permissions) hoặc quy tắc nghiệp vụ rẽ nhánh trọng yếu.
+> - **Định dạng lựa chọn**: Luôn thiết kế phương án trắc nghiệm rõ ràng, ngắn gọn và đặt tiền tố `(Recommended)` ở phương án khuyến nghị tối ưu nhất để người dùng phê duyệt nhanh chóng.
+> - **Nguyên tắc phân tách (Separation of Concerns)**: TUYỆT ĐỐI KHÔNG làm phiền người dùng bằng các câu hỏi tiểu tiết (P1/P2, thiết kế UI chi tiết, xử lý edge case kỹ thuật, hoặc lựa chọn thư viện). Thay vào đó, hãy chủ động đề xuất giải pháp tối ưu trực tiếp vào tài liệu `prd.md` và trình bày cho người dùng phê duyệt một lần tại **Cổng Nghiệm Thu PRD (PRD Sign-off Gate)**.
 
 ### Bước 3: Soạn Thảo PRD Chuẩn Hóa (`docs/specs/<feature-slug>/prd.md`)
 Biên soạn tài liệu PRD đầy đủ 8 mục theo [prd-template.md](../../.agents/skills/team-pipeline/resources/prd-template.md):

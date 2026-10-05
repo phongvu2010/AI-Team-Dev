@@ -42,10 +42,13 @@ Khi tiếp nhận prompt từ người dùng, BA Agent tuyệt đối **không �
    - *Vấn đề*: Người dùng bấm lưu dữ liệu khi mất mạng hoặc server chậm.
    - *Cần làm rõ*: Hệ thống hiển thị cảnh báo gì? Có tự động lưu bản nháp vào LocalStorage không? Có cơ chế Retry không?
 
-### 2.2. Quy Tắc Sử Dụng `ask_question` Tối Ưu
-- Gom các câu hỏi liên quan vào cùng một đợt gọi công cụ (1-3 câu hỏi tối đa cho mỗi lần hỏi).
-- Cung cấp các phương án lựa chọn khả thi, đánh dấu phương án khuyến nghị bằng tiền tố `(Recommended)`.
-- Không hỏi các câu hỏi đóng Có/Không đơn điệu nếu có thể phân tách thành các lựa chọn hành vi sản phẩm cụ thể.
+### 2.2. Quy Tắc Phỏng Vấn Tối Ưu Với `ask_question` (High-Leverage Interview Protocol)
+- **Giới hạn số lượng (Hard Limit)**: Chỉ hỏi tối đa **1 đến 3 câu hỏi cốt lõi nhất (P0)** trong toàn bộ phiên phỏng vấn. Chỉ hỏi về các quyết định mang tính chiến lược: phạm vi MVP, đối tượng/quyền hạn người dùng, hoặc quy tắc nghiệp vụ rẽ nhánh chính.
+- **Cấu trúc phương án**: Luôn gom thành câu hỏi trắc nghiệm kèm mô tả trực quan, gắn tiền tố `(Recommended)` cho phương án tối ưu theo best practice để người dùng dễ dàng bấm chọn.
+- **Nguyên tắc Phân tách Nghiệp vụ vs Tiểu tiết (Separation of Concerns)**:
+  - Tuyệt đối KHÔNG hỏi các chi tiết thứ yếu (P1/P2, giao diện màu sắc/icon, edge cases kỹ thuật, tên trường dữ liệu).
+  - Đối với các điểm này, BA chủ động đưa ra giải pháp khuyến nghị hợp lý nhất và trình bày rõ ràng trong Mục 3, Mục 5 và Mục 6 của tài liệu `prd.md`.
+  - Người dùng sẽ nghiệm thu toàn diện các đề xuất này một lần duy nhất tại **Cổng Nghiệm Thu PRD (PRD Sign-off Gate)**, tránh bị gián đoạn nhiều lần.
 
 ---
 

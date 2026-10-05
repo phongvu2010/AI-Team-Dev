@@ -125,7 +125,8 @@ AI Team Dev/
 ├── .env.example                                   # Biến môi trường mẫu cho DB, API, Frontend
 ├── .gitignore                                     # Bỏ qua bytecode, node_modules, cache
 ├── .agents/
-│   ├── agents/                                    # Định nghĩa 6 Subagents chuyên biệt kèm Guardrails
+│   ├── agents/                                    # Định nghĩa 7 Subagents chuyên biệt kèm Guardrails
+│   │   ├── ba.md
 │   │   ├── planner.md
 │   │   ├── db-dev.md
 │   │   ├── backend-dev.md
@@ -136,9 +137,11 @@ AI Team Dev/
 │       ├── team-pipeline/
 │       │   ├── SKILL.md
 │       │   └── resources/                         # Bộ mẫu hồ sơ bàn giao chuẩn hóa
+│       │       ├── prd-template.md                # Template đặc tả nghiệp vụ PRD
 │       │       ├── plan-template.md               # Template kế hoạch & Data Contract Matrix
 │       │       ├── test-report-template.md        # Template báo cáo QA & Structured Bug Tickets
 │       │       └── review-report-template.md      # Template thẩm định & Quality Scorecard
+│       ├── ba-requirements/SKILL.md
 │       ├── db-sqlalchemy-alembic/SKILL.md
 │       ├── backend-fastapi/SKILL.md
 │       └── frontend-nextjs/SKILL.md
@@ -166,17 +169,39 @@ Người dùng chỉ cần nhập yêu cầu tính năng vào chat Antigravity, 
 > *"Hãy triển khai tính năng Quản lý Danh mục (Category Management) gồm bảng categories (id, name, slug, description), CRUD API trên FastAPI và trang giao diện trên Next.js theo quy trình Multi-Agent."*
 
 Agent chính (**Tech Lead Orchestrator**) sẽ tự động:
-1. Gọi `planner` lập bản thiết kế tại `docs/specs/category-management/plan.md` (kèm Cross-Layer Data Contract Matrix).
-2. **Wave 1**: Gọi song song `db-dev` (viết model trong `src/db/`) và `frontend-dev` (dựng UI/Types trong `src/frontend/`).
-3. **Wave 2**: Gọi `backend-dev` viết router & service trong `src/backend/` kết nối trực tiếp `src/db/`.
-4. Gọi `qa-tester` chạy kiểm tra `ruff` linter và bộ kiểm thử tự động với `PYTHONPATH=src .venv/bin/pytest src/backend/tests -v` và xuất `test-report.md`. (Nếu lỗi, tự kích hoạt vòng lặp Self-Healing).
-5. Gọi `code-reviewer` audit qua `git diff` và xuất `review-report.md` (`APPROVED`). (Nếu lỗi, tự kích hoạt vòng lặp Review-Fix).
-6. **Đóng gói & Commit**: Tự động rà soát `git status` và tạo commit chuẩn Conventional Commits `feat(<slug>): ...` ghi nhận mốc hoàn thành.
+0. **Giai đoạn 0 (BA)**: Gọi `ba` phỏng vấn làm rõ yêu cầu P0 qua `ask_question`, xuất bản `docs/specs/category-management/prd.md` và xin User nghiệm thu.
+1. **Giai đoạn 1 (Planner)**: Gọi `planner` lập bản thiết kế kỹ thuật tại `docs/specs/category-management/plan.md` (kèm Cross-Layer Data Contract Matrix).
+2. **Giai đoạn 2 (Wave 1 Song song)**: Gọi song song `db-dev` (viết model trong `src/db/`) và `frontend-dev` (dựng UI/Types trong `src/frontend/` theo Mock Fixtures).
+3. **Giai đoạn 2 (Wave 2 Pipelined)**: Handshake Gate kiểm tra DB xong $\to$ Kích hoạt ngay `backend-dev` viết router & service trong `src/backend/` kết nối trực tiếp `src/db/`.
+4. **Giai đoạn 3 (Testing & Self-Healing)**: Gọi `qa-tester` chạy linter `ruff`, contract sync và pytest tự động (`PYTHONPATH=src .venv/bin/pytest src/backend/tests -v`), xuất `test-report.md`. (Nếu có lỗi, tự sửa qua vòng lặp Self-Healing tối đa 3 lần).
+5. **Giai đoạn 4 (Code Review)**: Gọi `code-reviewer` audit qua `git diff` và xuất `review-report.md` (`APPROVED`). (Nếu có góp ý, tự sửa qua vòng lặp Review-Fix).
+6. **Giai đoạn 5 (Packaging & Cleanup)**: Tự động rà soát `git status`, tạo commit chuẩn Conventional Commits `feat(<slug>): ...`, và tự động dọn dẹp subagents qua `manage_subagents(Action="kill")`.
+
+---
+
+### ⚡ Phím Tắt & Slash Commands Hữu Ích Trên Antigravity 2.0
+
+Bạn có thể tận dụng các **Slash Commands** trực tiếp trên khung chat để kích hoạt các chế độ tư duy và quy trình chuyên biệt:
+
+| Lệnh Slash | Mục đích & Ngữ cảnh sử dụng tối ưu |
+| :--- | :--- |
+| **`/grill-me`** | **Phỏng vấn làm rõ nghiệp vụ**: Sử dụng khi bắt đầu một tính năng mới để BA Agent đặt câu hỏi tương tác, rà soát kịch bản góc và chốt phạm vi trước khi làm PRD. |
+| **`/goal`** | **Triển khai tự động không gián đoạn**: Sử dụng khi muốn đội ngũ Dev Squads chạy liên tục từ Wave 1 $\to$ Wave 2 $\to$ QA $\to$ Review đến khi đạt 100% mục tiêu. |
+| **`/boost`** | **Suy luận chuyên sâu (Deep Thinking)**: Kích hoạt mô hình cao cấp nhất để giải quyết các bài toán kiến trúc phân tán, thuật toán bảo mật hoặc refactor lớn. |
+| **`/plan`** | **Lập kế hoạch đa bước**: Yêu cầu hệ thống phân tích hiện trạng codebase và thiết lập chi tiết lộ trình thực thi trước khi viết code. |
+| **`/teamwork-preview`** | **Xem trước phối hợp Multi-Agent**: Trực quan hóa sơ đồ phân công nhiệm vụ và rào chắn thư mục của các subagents trước khi kích hoạt. |
+| **`/learn`** | **Ghi nhớ tri thức dài hạn**: Yêu cầu AI lưu lại các quy chuẩn, thủ thuật hoặc cấu hình vừa thiết lập thành công vào bộ nhớ Workspace vĩnh viễn. |
+| **`/browser`** | **Kiểm thử trực quan giao diện Web**: Mở trình duyệt tương tác với ứng dụng Next.js, chụp ảnh màn hình và kiểm tra giao diện thực tế. |
+| **`/schedule`** | **Lên lịch định kỳ**: Hẹn giờ chạy kiểm thử, smoke test hoặc kiểm tra lệch schema (drift) theo chu kỳ. |
+
+---
 
 ### Cách 2: Gọi Trực Tiếp Từng Squad Hoặc Giai Đoạn (Direct Squad Invocation)
+- *"Nhờ `ba` phỏng vấn và soạn thảo PRD cho phân hệ Giỏ hàng."*
 - *"Nhờ `planner` thiết kế kiến trúc phân hệ Sản phẩm."*
 - *"Nhờ `db-dev` thêm trường `thumbnail_url` vào bảng `categories` tại `src/db/`."*
 - *"Nhờ `backend-dev` viết thêm endpoint lọc danh mục tại `src/backend/`."*
 - *"Nhờ `frontend-dev` hoàn thiện component CategoryCard tại `src/frontend/`."*
 - *"Nhờ `qa-tester` kiểm tra lint và chạy lại pytest cho tầng backend."*
 - *"Nhờ `code-reviewer` review các thay đổi mới nhất qua git diff."*
+

@@ -68,14 +68,16 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
 ┌───────────────────────────────────────────────────────────────────────────┐
 │ GIAI ĐOẠN 4: Kiểm thử Tự động & Vòng lặp Sửa lỗi (`qa-tester`)            │
 │ - 1. Linter: .venv/bin/ruff check src/                                    │
-│ - 2. DB & Backend Tests: PYTHONPATH=src .venv/bin/pytest -v               │
+│ - 2. Contract Sync: PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py
+│ - 3. DB & Backend Tests: PYTHONPATH=src .venv/bin/pytest -v               │
 │   (SQLite async in-memory fallback cô lập + Contract Verification Test)   │
-│ - 3. Frontend Typecheck: npm --prefix src/frontend run typecheck          │
+│ - 4. Frontend Typecheck: npm --prefix src/frontend run typecheck          │
 │ - Xuất bản: docs/specs/<feature-slug>/test-report.md                      │
 │                                                                           │
 │  ┌────────────────────────────────────────────────────────────────────┐   │
 │  │ [Vòng lặp Self-Healing] Nếu FAILED:                                │   │
 │  │ Tech Lead gửi tin nhắn: [SELF-HEALING ACTION REQUIRED]             │   │
+│  │ (Cắt tỉa 15-25 dòng traceback trọng tâm chống phình ngữ cảnh)      │   │
 │  │ Dev Squad sửa lỗi -> Gửi phản hồi: [FIX-COMPLETED]                 │   │
 │  │ QA kiểm thử lại (Tối đa 3 vòng lặp -> Kích hoạt Circuit Breaker)   │   │
 │  └────────────────────────────────────────────────────────────────────┘   │
@@ -113,13 +115,13 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
 | Vai trò / Tác tử | Nhận diện Subagent | Antigravity Model | Thư mục sở hữu (Ownership) | Lệnh được phép (Whitelist) | Lệnh cấm (Blacklist) |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Product Owner** | User (Con người) | - | Toàn dự án | Mọi lệnh hệ thống | - |
-| **Tech Lead** | Antigravity Main Agent | `inherit` | Toàn dự án | Điều phối subagents, `manage_subagents` (dọn dẹp), độc quyền cập nhật manifest (`pyproject.toml`, `package.json`), `python3 -m py_compile src/db/models/*.py` (Wave Gate), `git status`, `git add`, `git commit` | Cấm `git reset --hard`, `git push --force` |
-| **Business Analyst** | [`ba`](.agents/agents/ba.md) | `pro` (Phân tích nghiệp vụ sâu) | `docs/specs/<slug>/` | Phỏng vấn (`ask_question`), chỉ đọc/ghi file (`view_file`, `write_to_file`, `replace_file_content`) | Cấm chạy shell commands, cấm sửa code hoặc file cấu hình gốc |
+| **Tech Lead** | Antigravity Main Agent | `inherit` | Toàn dự án | Điều phối subagents, `manage_subagents` (dọn dẹp), độc quyền cập nhật manifest (`pyproject.toml`, `package.json`), `python3 -m py_compile src/db/models/*.py` (Wave Gate), `PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py`, `git status`, `git add`, `git commit` | Cấm `git reset --hard`, `git push --force` |
+| **Business Analyst** | [`ba`](.agents/agents/ba.md) | `pro` (Phân tích nghiệp vụ sâu) | `docs/specs/<slug>/` | Phỏng vấn tối ưu 1-3 câu P0 (`ask_question`), chỉ đọc/ghi file (`view_file`, `write_to_file`, `replace_file_content`) | Cấm chạy shell commands, cấm sửa code hoặc file cấu hình gốc |
 | **Architect** | [`planner`](.agents/agents/planner.md) | `pro` (Reasoning sâu) | `docs/specs/<slug>/` | Chỉ đọc/ghi file tài liệu (`view_file`, `write_to_file`) | Cấm chạy shell commands, cấm sửa code hoặc file cấu hình gốc |
 | **DB Specialist** | [`db-dev`](.agents/agents/db-dev.md) | `inherit` | `src/db/` | `.venv/bin/ruff check src/db/`, `python3 -m py_compile`, `generate_offline_migration.py`, `alembic`, `runner.py` | Cấm `rm -rf`, `dropdb`, cấm sửa `pyproject.toml`, cấm `pip install`, ghi file ngoài `src/db/` |
-| **Frontend Dev** | [`frontend-dev`](.agents/agents/frontend-dev.md) | `inherit` / `flash` | `src/frontend/` | `npm --prefix src/frontend run typecheck`, `run lint`, `run build` | Cấm `npm install` trần, cấm tự ý sửa `package.json`, ghi file ngoài `src/frontend/` |
+| **Frontend Dev** | [`frontend-dev`](.agents/agents/frontend-dev.md) | `inherit` / `flash` | `src/frontend/` | `npm --prefix src/frontend run typecheck`, `run lint`, `run build` (offline sandbox-safe) | Cấm `npm install` trần, cấm tự ý sửa `package.json`, cấm remote fonts, ghi file ngoài `src/frontend/` |
 | **Backend Dev** | [`backend-dev`](.agents/agents/backend-dev.md) | `inherit` | `src/backend/` | `.venv/bin/ruff check src/backend/`, `python3 -m py_compile` | Cấm `pip install` trần, cấm sửa `pyproject.toml`, ghi file ngoài `src/backend/` |
-| **QA Specialist** | [`qa-tester`](.agents/agents/qa-tester.md) | `flash` (Tiết kiệm 60% latency & token) | `docs/specs/`, `tests/` | `.venv/bin/ruff check src/`, `PYTHONPATH=src .venv/bin/pytest`, `run typecheck` | Cấm tự ý sửa code nghiệp vụ trong `src/` hoặc file manifest |
+| **QA Specialist** | [`qa-tester`](.agents/agents/qa-tester.md) | `flash` (Tiết kiệm 60% latency & token) | `docs/specs/`, `tests/` | `.venv/bin/ruff check src/`, `PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py`, `PYTHONPATH=src .venv/bin/pytest`, `run typecheck` | Cấm tự ý sửa code nghiệp vụ trong `src/` hoặc file manifest |
 | **Code Reviewer** | [`code-reviewer`](.agents/agents/code-reviewer.md) | `pro` (Audit bảo mật OWASP) | `docs/specs/` | `git status --short`, `git diff --stat`, `git diff -- src/ docs/ ':!*package-lock.json' ':!*.lock'`, `git diff` | Cấm chạy lệnh sửa code, git commit hoặc đổi file cấu hình |
 
 ---
@@ -132,11 +134,12 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
 - **Vai trò thực hiện**: BA Agent ([`ba`](.agents/agents/ba.md), `Model: "pro"`).
 - **Kỹ thuật thực hiện**:
   1. **Tiếp nhận prompt & Đặt Feature Slug**: Định danh ngắn gọn dạng `kebab-case` (ví dụ: `auth-system`, `inventory-tracking`). Thư mục hồ sơ: `docs/specs/<feature-slug>/`.
-  2. **Phỏng vấn làm rõ nghiệp vụ qua `ask_question`**:
-     - Rà soát 6 khía cạnh cốt lõi: Phân ranh giới MVP (P0 vs Out-of-Scope), Personas & Quyền hạn, Quy tắc nghiệp vụ (BRs), Hành trình người dùng (User Journeys), Kịch bản ngoại lệ (Edge Cases), và Tiêu chí nghiệm thu nghiệp vụ (BACs theo Given-When-Then).
-     - Gom nhóm câu hỏi logic, đưa ra phương án khuyến nghị `(Recommended)` để hỗ trợ người dùng ra quyết định nhanh chóng.
+  2. **Áp dụng High-Leverage Interview Protocol qua `ask_question`**:
+     - **Giới hạn số lượng (Hard limit)**: Chỉ hỏi tối đa **1 đến 3 câu hỏi cốt lõi nhất (P0)** mang tính sống còn đối với kiến trúc hoặc phạm vi (MVP Scope, Personas & Quyền hạn, Quy tắc nghiệp vụ rẽ nhánh chính).
+     - **Định dạng lựa chọn**: Luôn gom thành các phương án trắc nghiệm rõ ràng, đánh dấu tiền tố `(Recommended)` ở phương án khuyến nghị tối ưu nhất.
+     - **Nguyên tắc Phân tách Nghiệp vụ vs Tiểu tiết**: TUYỆT ĐỐI KHÔNG làm phiền người dùng bằng các câu hỏi vụn vặt (UI styling, tên trường DB, các edge cases kỹ thuật thứ yếu). Thay vào đó, BA chủ động đề xuất giải pháp tối ưu trực tiếp vào bản thảo PRD.
   3. **Xuất bản PRD**: Biên soạn hoàn chỉnh `docs/specs/<feature-slug>/prd.md` theo mẫu chuẩn [prd-template.md](.agents/skills/team-pipeline/resources/prd-template.md).
-- > 🛡️ **Quality Gate 0 (PRD Sign-off Gate)**: BA Agent tóm tắt PRD và xin xác nhận nghiệm thu từ User. Khi User đồng ý (`status: APPROVED_BY_USER`), Tech Lead mới kích hoạt `planner`.
+- > 🛡️ **Quality Gate 0 (PRD Sign-off Gate)**: BA Agent tóm tắt các quyết định và đề xuất nghiệp vụ cho User để xin nghiệm thu một lần duy nhất. Khi User chấp thuận (`status: APPROVED_BY_USER`), Tech Lead mới kích hoạt `planner`.
 
 ---
 
@@ -262,22 +265,27 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
   - Khi test các tính năng đặc thù PostgreSQL (`pgvector`, `tsvector`, native enum, array operators), gắn decorator `@pytest.mark.postgres_only`.
   - SQLite in-memory test mặc định sẽ tự động skip an toàn các test này mà không báo `FAILED`.
   - Khi có PostgreSQL: `TEST_DATABASE_URL=postgresql+asyncpg://... PYTHONPATH=src .venv/bin/pytest src/backend/tests -v`.
-- Thực thi chuỗi lệnh kiểm tra:
+- Thực thi chuỗi lệnh kiểm tra (4 tầng toàn diện):
   ```bash
   # 1. Linter & Code Standards
   .venv/bin/ruff check src/
 
-  # 2. Backend & DB Testing (SQLite in-memory fallback + Contract Verification)
+  # 2. Automated Contract & Schema Drift Verification
+  PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py <feature-slug>
+
+  # 3. Backend & DB Testing (SQLite in-memory fallback + Contract Verification)
   PYTHONPATH=src ./.venv/bin/pytest src/backend/tests -v
 
-  # 3. Frontend TypeScript Integrity
+  # 4. Frontend TypeScript Integrity
   npm --prefix src/frontend run typecheck
   ```
 - Xuất báo cáo tại `docs/specs/<feature-slug>/test-report.md` (kèm Chỉ số Metrics và Structured Bug Tickets).
 - **Vòng lặp Self-Healing (Tự sửa lỗi) & Bảo Toàn Ngữ Cảnh (Context Preservation)**:
   - Nếu `overall_status: FAILED`:
     - **Bảo toàn Ngữ cảnh**: Tech Lead **BẮT BUỘC dùng `send_message`** gửi yêu cầu sửa lỗi tới Conversation ID của squad (`SQUAD_REGISTRY[target_agent]`). TUYỆT ĐỐI KHÔNG gọi `invoke_subagent` mới.
-    - Dev Squad sửa lỗi trong thư mục phân quyền, chạy smoke test và gửi phản hồi `[FIX-COMPLETED]`.
+    - **Quy chuẩn Cắt tỉa Nhật ký Lỗi Chống Phình Ngữ Cảnh (Anti-Bloat Traceback Rule)**:
+      Tech Lead TUYỆT ĐỐI KHÔNG copy-paste toàn bộ output log của terminal. Chỉ trích xuất đúng **15-25 dòng trọng tâm nhất** mô tả chính xác điểm gãy (dòng file, loại ngoại lệ, assertion failure).
+    - Dev Squad sửa lỗi trong thư mục phân quyền, chạy smoke test và gửi phản hồi `[FIX-COMPLETED]` (tóm tắt súc tích trong 3-5 gạch đầu dòng).
     - `qa-tester` chạy lại bài test. Bộ đếm `iteration` tăng thêm 1.
     - **Cơ chế Ngắt Mạch (Circuit Breaker)**: Tối đa **3 vòng lặp**. Nếu quá 3 lần vẫn lỗi, kích hoạt Giao thức Báo cáo Leo thang cho User.
 
@@ -432,3 +440,37 @@ Dùng bảng này để nghiệm thu sản phẩm sau mỗi tính năng:
 ### Vấn đề 6: Next.js 15 Client hiển thị dữ liệu Mock cũ sau khi đã chuyển sang Live API
 * **Nguyên nhân**: Router cache hoặc fetch cache của trình duyệt vẫn giữ response mock trước đó.
 * **Cách khắc phục**: `src/frontend/src/lib/api/client.ts` đã được thiết lập `cache: 'no-store'` khi `isMockMode() === false`. Ngoài ra, gọi hàm `clearClientApiCache()` để dọn sạch sessionStorage/localStorage.
+
+---
+
+## 7. Cẩm Nang Slash Commands Dành Cho Người Dùng (Antigravity 2.0 Shortcuts)
+
+Trên giao diện Antigravity 2.0, **Slash Commands** là các phím tắt trực tiếp trên khung chat giúp người dùng (Product Owner / Developer) kích hoạt các chế độ tư duy và quy trình tự động hóa chuyên sâu. Tác tử AI không thể tự gõ lệnh này, nhưng Tech Lead Orchestrator sẽ chủ động gợi ý cho bạn sử dụng khi phù hợp với bối cảnh tác vụ.
+
+### 7.1. Bảng Ma Trận Ánh Xạ Slash Commands Theo Giai Đoạn Dự Án
+
+| Lệnh Slash | Khi Nào Nên Sử Dụng? | Giai Đoạn Đội Dev Tương Ứng | Tác Dụng Cụ Thể Lên Hệ Thống |
+| :--- | :--- | :--- | :--- |
+| **`/grill-me`** | Bắt đầu ý tưởng mới, cần làm rõ phạm vi, phân quyền và quy tắc nghiệp vụ rẽ nhánh | **Giai đoạn 0: BA Agent (`ba`)** | Kích hoạt phiên phỏng vấn tương tác chuyên sâu. BA Agent sẽ chất vấn có cấu trúc để làm rõ các giả định ngầm, edge cases trước khi chốt `prd.md`. |
+| **`/plan`** | Khi tính năng phức tạp, cần phân tích kiến trúc đa tầng trước khi viết mã | **Giai đoạn 1: Planner (`planner`)** | Yêu cầu hệ thống lập kế hoạch chi tiết từng bước, khảo sát mã nguồn hiện hữu và hoàn thiện Ma trận hợp đồng 3 tầng `plan.md`. |
+| **`/goal`** | Cần triển khai trọn vẹn một tính năng từ A $\to$ Z (chạy qua đêm / không ngắt quãng) | **Giai đoạn 3 $\to$ 6: Full Pipeline** | Đặt mục tiêu bền bỉ: Đội Dev tự động phối hợp qua 2 Wave, tự sửa lỗi qua QA & Review, không dừng lại cho đến khi đạt 100% test passed & review approved. |
+| **`/boost`** | Bài toán thuật toán khó, thiết kế module cốt lõi, hoặc refactor kiến trúc lớn | **Giai đoạn 1 & 4 (Kiến trúc & Review)** | Kích hoạt chế độ Deep Thinking với mô hình mạnh nhất (`pro`), phân tích đa chiều và kiểm chứng nghiêm ngặt để đưa ra giải pháp tối ưu. |
+| **`/teamwork-preview`**| Trước khi bắt đầu một Epic lớn, muốn xem trước cách các subagents phối hợp | **Trước Giai đoạn 2 (Dev Squads)** | Trực quan hóa sơ đồ phối hợp, phân vai trò, quyền hạn thư mục và luồng chuyển giao dữ liệu giữa các thành viên trong đội. |
+| **`/learn`** | Khi bạn vừa hướng dẫn AI một quy tắc mới hoặc vừa sửa một lỗi môi trường đặc thù | **Sau khi xử lý sự cố / Customization** | Yêu cầu Antigravity ghi nhớ vĩnh viễn kinh nghiệm hoặc quy tắc này vào tri thức workspace cho các phiên làm việc tiếp theo. |
+| **`/browser`** | Cần kiểm tra giao diện Next.js trực quan trên trình duyệt, test luồng UX/UI | **Giai đoạn 4: QA Testing & UI Audit** | Kích hoạt công cụ duyệt web để tương tác với trang đích, chụp ảnh màn hình, kiểm tra rendering thực tế và accessibility. |
+| **`/schedule`** | Cần hẹn giờ hoặc đặt lịch chạy kiểm thử, smoke test, kiểm tra schema định kỳ | **Bảo trì / Giám sát liên tục** | Thiết lập bộ đếm một lần hoặc cron job định kỳ trong nền (ví dụ: chạy test kiểm tra drift mỗi sáng). |
+
+### 7.2. Kịch Bản Sử Dụng Điển Hình (Practical Scenarios)
+
+1. **Khởi động một Phân hệ Mới với BA**:
+   * *Người dùng gõ*: `/grill-me Hãy cùng tôi thiết lập tính năng Quản lý Đơn hàng (Order Management)`
+   * *Hiệu ứng*: BA Agent lập tức đặt các câu hỏi trọng tâm P0 về luồng trạng thái đơn hàng, phương thức thanh toán và phân quyền, sau đó xuất bản `docs/specs/order-management/prd.md`.
+
+2. **Chạy Tự Động Xuyên Suốt Tính Năng Đến Khi Bàn Giao**:
+   * *Người dùng gõ*: `/goal Triển khai hoàn chỉnh tính năng order-management theo prd.md đã duyệt`
+   * *Hiệu ứng*: Tech Lead kích hoạt Planner $\to$ Wave 1 (DB + Frontend) $\to$ Wave 2 (Backend) $\to$ QA Tester (Self-Healing) $\to$ Code Reviewer $\to$ Git Commit. Đội dev kiên trì tự sửa lỗi cho đến khi hoàn tất 100%.
+
+3. **Ghi Nhớ Quy Chuẩn Dự Án Đặc Thù**:
+   * *Người dùng gõ*: `/learn Hãy luôn sử dụng asyncpg pool với Transaction Mode port 6543 cho FastAPI runtime và Session Mode port 5432 cho Alembic migrations`
+   * *Hiệu ứng*: Antigravity lưu quy chuẩn này vào cấu hình workspace, đảm bảo mọi subagent trong tương lai luôn tuân thủ chính xác.
+

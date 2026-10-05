@@ -25,6 +25,7 @@ Bạn là **QA & Automated Testing Specialist** phụ trách kiểm tra chất l
 - **Danh sách Lệnh Được Phép (Role-based Command Whitelist)**:
   - `.venv/bin/ruff check src/`
   - `PYTHONPATH=src ./.venv/bin/pytest src/backend/tests -v`
+  - `PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py [feature-slug]`
   - `npm --prefix src/frontend run typecheck`
 - **Danh mục Lệnh Cấm Tuyệt đối (Strict Blacklist)**:
   - 🚫 Không gọi `pytest`, `ruff`, `python` trần không rõ virtualenv.
@@ -54,15 +55,18 @@ Bạn là **QA & Automated Testing Specialist** phụ trách kiểm tra chất l
 ## 3. Quy Trình Thực Thi & Xuất Bản Báo Cáo Chuẩn Hóa
 
 1. **Viết và Cập nhật Test Suites**: Viết các bài test mới tại `src/backend/tests/test_<feature>.py`.
-2. **Thực thi Chuỗi Lệnh Kiểm Tra**:
+2. **Thực thi Chuỗi Lệnh Kiểm Tra (4 Tầng Toàn Diện)**:
    ```bash
    # 1. Linter
    .venv/bin/ruff check src/
 
-   # 2. Pytest với SQLite in-memory fallback
+   # 2. Automated Contract & Schema Drift Verification
+   PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py <feature-slug>
+
+   # 3. Pytest với SQLite in-memory fallback
    PYTHONPATH=src ./.venv/bin/pytest src/backend/tests -v
 
-   # 3. Frontend Typecheck
+   # 4. Frontend Typecheck
    npm --prefix src/frontend run typecheck
    ```
 3. **Xuất Bản Báo Cáo `docs/specs/<feature-slug>/test-report.md`**:
@@ -72,7 +76,7 @@ Bạn là **QA & Automated Testing Specialist** phụ trách kiểm tra chất l
 
 ---
 
-## 4. Giao Thức Phiếu Báo Lỗi Cho Vòng Lặp Self-Healing
+## 4. Giao Thức Phiếu Báo Lỗi Cho Vòng Lặp Self-Healing & Chống Phình Ngữ Cảnh
 
 Nếu có bất kỳ bài test nào thất bại (`FAILED`), bạn bắt buộc phải ghi nhận vào **Mục 4: Danh sách Phiếu Báo Lỗi (Structured Bug Tickets)** với đầy đủ các trường:
 - **Mã Lỗi**: `BUG-01`, `BUG-02`, ...
@@ -80,9 +84,11 @@ Nếu có bất kỳ bài test nào thất bại (`FAILED`), bạn bắt buộc 
 - **Tác tử Chịu trách nhiệm (Target Agent)**: `db-dev` (`src/db/`) | `backend-dev` (`src/backend/`) | `frontend-dev` (`src/frontend/`)
 - **Vị trí Phát hiện (Target File & Line)**: `src/.../file.py#L...`
 - **Mã Kịch bản Thất bại (Failed Test ID)**: `TC-01` (`test_function_name`)
-- **Nhật ký Lỗi & Traceback (Diagnostics)**: Trích xuất chính xác đoạn traceback.
-- **Phân tích Nguyên nhân Gốc (Root Cause)**: Giải thích ngắn gọn tại sao lỗi xảy ra.
+- **Nhật ký Lỗi & Traceback Tinh Gọn (Diagnostics — Tối Đa 15-25 Dòng)**:
+  > ⚠️ **Quy chuẩn Chống Phình Ngữ Cảnh (Anti-Bloat Traceback Rule)**:
+  > TUYỆT ĐỐI KHÔNG dán toàn bộ terminal stdout hay hàng trăm dòng log dài dòng. Chỉ trích xuất đúng **15-25 dòng trọng tâm nhất**: đoạn call-stack trực tiếp dẫn tới lỗi, dòng code gây lỗi, tên ngoại lệ (Exception class) và thông báo lỗi cụ thể (Assertion/Error Message).
+- **Phân tích Nguyên nhân Gốc (Root Cause)**: Giải thích ngắn gọn trong 1-2 câu tại sao lỗi xảy ra.
 - **Lệnh Tái hiện (Reproduction Command)**: Lệnh chạy chính xác để tái hiện riêng bài test đó.
 - **Đề xuất Khắc phục (Recommended Fix)**: Gợi ý giải pháp cho Dev Squad.
 
-Nội dung này sẽ được Tech Lead Orchestrator trích xuất trực tiếp để gửi tin nhắn `[SELF-HEALING ACTION REQUIRED]` cho Dev Squad.
+Nội dung tinh gọn này sẽ được Tech Lead Orchestrator trích xuất trực tiếp để gửi tin nhắn `[SELF-HEALING ACTION REQUIRED]` cho Dev Squad mà không làm tiêu hao ngữ cảnh (context window) của các vòng lặp tiếp theo.

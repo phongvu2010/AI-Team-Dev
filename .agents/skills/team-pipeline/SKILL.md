@@ -36,8 +36,8 @@ Nhằm đảm bảo tính cô lập và toàn vẹn của hệ thống, mọi t�
 - **`planner`**: Chỉ thao tác đọc/ghi file tài liệu (`view_file`, `write_to_file`, `replace_file_content`).
 - **`db-dev`**: Chỉ chạy `.venv/bin/ruff check src/db/`, `python3 -m py_compile src/db/...`, `PYTHONPATH=src .venv/bin/python src/db/migrations/generate_offline_migration.py <slug>`, `alembic ...`, `PYTHONPATH=src .venv/bin/python src/db/seeds/runner.py`.
 - **`backend-dev`**: Chỉ chạy `.venv/bin/ruff check src/backend/`, `python3 -m py_compile src/backend/...`.
-- **`frontend-dev`**: Chỉ chạy `npm --prefix src/frontend run typecheck`, `npm --prefix src/frontend run lint`, `npm --prefix src/frontend run build`.
-- **`qa-tester`**: Chỉ chạy `.venv/bin/ruff check src/`, `PYTHONPATH=src ./.venv/bin/pytest src/backend/tests -v`, `npm --prefix src/frontend run typecheck`.
+- **`frontend-dev`**: Chỉ chạy `npm --prefix src/frontend run typecheck`, `npm --prefix src/frontend run lint`, `npm --prefix src/frontend run build` (offline sandbox-safe).
+- **`qa-tester`**: Chỉ chạy `.venv/bin/ruff check src/`, `PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py <feature-slug>`, `PYTHONPATH=src ./.venv/bin/pytest src/backend/tests -v`, `npm --prefix src/frontend run typecheck`.
 - **`code-reviewer`**: Chỉ chạy `git status --short`, `git diff --stat`, `git diff -- src/ docs/ ':!*package-lock.json' ':!*.lock' ':!*.min.*'`, `git diff`.
 - **`tech-lead`**: Điều phối subagents, quản lý và dọn dẹp subagents qua `manage_subagents`, độc quyền cập nhật manifest cấu hình gốc (`pyproject.toml`, `package.json`), git add, git commit.
 
@@ -46,6 +46,7 @@ Nhằm đảm bảo tính cô lập và toàn vẹn của hệ thống, mọi t�
 - Cấm subagents tự ý sửa đổi file cấu hình gốc (`pyproject.toml`, `docker-compose.yml`, `alembic.ini`, `src/frontend/package.json`). Khi cần thêm thư viện mới, subagent BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]`. Độc quyền Tech Lead Orchestrator chỉnh sửa các file manifest này.
 - Cấm chạy `pip install` hoặc `npm install` trần trong sandbox.
 - Cấm gọi `pytest`, `ruff`, `python` trần không trỏ vào `.venv/bin/`.
+- Cấm import external remote fonts gây gọi mạng ngoài khi build trong sandbox; luôn dùng system fonts hoặc Tailwind CSS classes.
 - Cấm tác tử sửa file ngoài thư mục phụ trách (`src/db/` cho db-dev, `src/backend/` cho backend-dev, `src/frontend/` cho frontend-dev).
 
 ---
@@ -57,9 +58,9 @@ Gọi `invoke_subagent`:
 - `TypeName`: `"ba"`
 - `Role`: `"Business Analyst & Requirements Engineer"`
 - `Model`: `"pro"` *(Model Pro đảm bảo tư duy phân tích nghiệp vụ sắc bén, phát hiện điểm mù và thiết lập kịch bản phỏng vấn)*
-- `Prompt`: Phân tích prompt ban đầu từ User, sử dụng `ask_question` để phỏng vấn các điểm mơ hồ, xác định phạm vi In-Scope/Out-of-Scope, Business Rules, Edge Cases, User Journeys, và Business Acceptance Criteria. Xuất bản PRD tại `docs/specs/<feature-slug>/prd.md` theo mẫu `.agents/skills/team-pipeline/resources/prd-template.md`.
+- `Prompt`: Phân tích prompt ban đầu từ User. Áp dụng **High-Leverage Interview Protocol**: chỉ sử dụng `ask_question` cho tối đa 1 đến 3 câu hỏi cốt lõi nhất (P0) về ranh giới phạm vi, quyền hạn và quy tắc rẽ nhánh; các điểm chi tiết thứ yếu hãy chủ động đề xuất giải pháp tối ưu trong PRD. Xuất bản PRD tại `docs/specs/<feature-slug>/prd.md` theo mẫu `.agents/skills/team-pipeline/resources/prd-template.md`.
 - **Cổng Nghiệm Thu PRD (PRD Sign-off Gate)**:
-  - `ba` trình bày tóm tắt cho User và xin phê duyệt (Sign-off).
+  - `ba` trình bày tóm tắt cho User và xin phê duyệt (Sign-off) các đề xuất nghiệp vụ.
   - Khi User chấp thuận, tài liệu được gắn `status: APPROVED_BY_USER`.
   - Tech Lead kiểm tra xác nhận sự phê duyệt này trước khi chuyển sang Bước 1.
 
@@ -110,17 +111,21 @@ Gọi `invoke_subagent`:
 ### Bước 3: Khởi chạy `qa-tester` & Vòng lặp Tự sửa lỗi (Self-Healing Loop)
 Gọi `invoke_subagent` với `TypeName: "qa-tester"`, `Model: "flash"`:
 - *(Dùng Model Flash giúp hoàn thành chuỗi CLI linter/tests nhanh hơn 60% và tiết kiệm token)*.
-- `qa-tester` chạy chuỗi kiểm tra:
+- `qa-tester` chạy chuỗi kiểm tra 4 tầng:
   1. `.venv/bin/ruff check src/`
-  2. `PYTHONPATH=src ./.venv/bin/pytest src/backend/tests -v`
+  2. `PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py <feature-slug>`
+     *(Kiểm tra tự động tính toàn vẹn của Cross-Layer Contract Matrix và chuẩn casing snake_case giữa Pydantic và TypeScript)*.
+  3. `PYTHONPATH=src ./.venv/bin/pytest src/backend/tests -v`
      *(Mặc định chạy SQLite in-memory cô lập. Các bài test có tính năng đặc thù PostgreSQL được gắn `@pytest.mark.postgres_only` sẽ tự động skip an toàn khi chạy trên SQLite)*.
-  3. `npm --prefix src/frontend run typecheck`
+  4. `npm --prefix src/frontend run typecheck`
 - Xuất báo cáo theo mẫu `.agents/skills/team-pipeline/resources/test-report-template.md` tại `docs/specs/<feature-slug>/test-report.md`.
 - **Vòng lặp Self-Healing (Tự sửa lỗi) & Bảo Toàn Ngữ Cảnh (Context Preservation)**:
   - Nếu `overall_status: FAILED`:
     - **Bảo toàn Ngữ cảnh**: Tech Lead **BẮT BUỘC sử dụng `send_message`** gửi yêu cầu sửa lỗi tới Conversation ID của squad liên quan (`SQUAD_REGISTRY[target_agent]`).
     - **TUYỆT ĐỐI KHÔNG** gọi `invoke_subagent` tạo mới agent cho cùng squad trong vòng lặp Self-Healing. Tái sử dụng Conversation ID giúp Subagent duy trì 100% ngữ cảnh (working memory, code context, terminal logs), giảm 70% token tiêu hao và sửa lỗi chính xác gấp 3 lần.
     - *Ngoại lệ*: Chỉ khi `send_message` gặp lỗi (agent đã terminated/crashed) mới gọi `invoke_subagent` khởi tạo agent mới kèm tóm tắt ngữ cảnh.
+    - **Quy chuẩn Cắt tỉa Nhật ký Lỗi Chống Phình Ngữ Cảnh (Anti-Bloat Traceback Rule)**:
+      Tech Lead TUYỆT ĐỐI KHÔNG copy-paste toàn bộ output log của terminal. Chỉ trích xuất đúng **15-25 dòng trọng tâm nhất** mô tả chính xác điểm gãy (dòng file, loại ngoại lệ, assertion failure).
     - Mẫu thông điệp điều phối:
       ```text
       [SELF-HEALING ACTION REQUIRED]
@@ -129,12 +134,12 @@ Gọi `invoke_subagent` với `TypeName: "qa-tester"`, `Model: "flash"`:
       - Target Agent: db-dev (src/db/) | backend-dev (src/backend/) | frontend-dev (src/frontend/)
       - Target File & Line: <đường_dẫn_file>#L...
       - Failed Test ID: <mã test case hoặc tên hàm test>
-      - Diagnostics & Traceback:
-        <chi tiết lỗi trích từ Mục 4 test-report.md>
+      - Diagnostics & Traceback (Pruned 15-25 lines):
+        <chỉ dán 15-25 dòng traceback trọng tâm từ Mục 4 test-report.md>
       - Reproduction Command: <lệnh tái hiện lỗi>
       - Instructions: Phân tích nguyên nhân và khắc phục triệt để trong thư mục phân quyền. Chạy smoke test và gửi báo cáo [FIX-COMPLETED] khi hoàn tất.
       ```
-    - Dev Squad sửa lỗi và phản hồi lại bằng thông điệp `[FIX-COMPLETED]`:
+    - Dev Squad sửa lỗi và phản hồi lại bằng thông điệp `[FIX-COMPLETED]` (tóm tắt súc tích trong 3-5 gạch đầu dòng):
       ```text
       [FIX-COMPLETED]
       - Feature: <feature-slug>
@@ -144,7 +149,7 @@ Gọi `invoke_subagent` với `TypeName: "qa-tester"`, `Model: "flash"`:
       - Contract Modified: TRUE | FALSE
       - Contract Changes: <chi tiết thay đổi schema/endpoint nếu TRUE, hoặc NONE>
       - Resolved Bug IDs: <BUG-01, ...>
-      - Summary of Fix: <tóm tắt ngắn gọn giải pháp>
+      - Summary of Fix: <tóm tắt ngắn gọn giải pháp trong 3-5 gạch đầu dòng>
       ```
     - **Contract Drift Protection**: Nếu `Contract Modified: TRUE`, Tech Lead cập nhật `docs/specs/<feature-slug>/plan.md`, nâng `version` (e.g. `1.1.0`), đồng bộ lại Cross-Layer Data Contract Matrix và gửi thông báo cho squad liên quan qua `send_message`.
     - Tech Lead yêu cầu `qa-tester` chạy lại bài test. Tăng `iteration` thêm 1.
@@ -200,3 +205,19 @@ Khi `review-report.md` đạt `APPROVED`:
    - Sau khi commit hoàn tất, Tech Lead Orchestrator **tự động gọi công cụ `manage_subagents` với `Action: "kill"`** cho toàn bộ Conversation IDs trong `SQUAD_REGISTRY` (hoặc `Action: "kill_all"`).
    - *Mục đích*: Giải phóng tài nguyên hệ thống, bộ nhớ và các background tasks của Antigravity 2.0, bảo đảm không bị rò rỉ context hoặc subagents zombie cho tính năng tiếp theo.
 4. Tổng hợp báo cáo nghiệm thu hoàn tất cho User kèm xác nhận dọn dẹp sạch sẽ.
+
+---
+
+## 4. Hướng Dẫn Khuyến Nghị Slash Commands Theo Bối Cảnh Thực Tế
+
+Tech Lead Orchestrator chủ động nhận diện bối cảnh và gợi ý các Slash Commands phù hợp cho người dùng:
+
+- Khi người dùng gửi ý tưởng mới còn mơ hồ $\to$ Khuyến nghị dùng `/grill-me` để kích hoạt phiên phỏng vấn nghiệp vụ chuyên sâu với `ba`.
+- Khi người dùng muốn đội dev thực thi tự động xuyên suốt từ A $\to$ Z không dừng $\to$ Khuyến nghị dùng `/goal`.
+- Khi người dùng muốn giải quyết bài toán kiến trúc/thuật toán phức tạp $\to$ Khuyến nghị dùng `/boost` (Deep Thinking).
+- Khi người dùng muốn khảo sát kế hoạch trước khi code $\to$ Khuyến nghị dùng `/plan`.
+- Khi người dùng muốn trực quan hóa cách các subagent phối hợp $\to$ Khuyến nghị dùng `/teamwork-preview`.
+- Khi người dùng vừa hướng dẫn một quy tắc tùy chỉnh hoặc sửa lỗi thành công $\to$ Khuyến nghị dùng `/learn`.
+- Khi người dùng cần audit trực quan UI/UX Next.js $\to$ Khuyến nghị dùng `/browser`.
+- Khi người dùng cần hẹn giờ kiểm thử định kỳ $\to$ Khuyến nghị dùng `/schedule`.
+

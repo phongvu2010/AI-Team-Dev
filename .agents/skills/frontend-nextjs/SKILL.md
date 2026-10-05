@@ -10,13 +10,16 @@ Runbook này hướng dẫn `frontend-dev` xây dựng giao diện người dùn
 
 ---
 
-## 1. Rào Chắn An Toàn Dòng Lệnh (CLI Guardrails)
+## 1. Rào Chắn An Toàn Dòng Lệnh & Sandbox Guardrails (CLI Guardrails)
 - **Quyền sở hữu**: Chỉ tạo/sửa file trong `src/frontend/`.
 - **Lệnh được phép**:
-  - `npm --prefix src/frontend run typecheck`
+  - `npm --prefix src/frontend run typecheck` (Kiểm tra kiểu tĩnh siêu tốc cho Phase 2 & Phase 3)
   - `npm --prefix src/frontend run lint`
-  - `npm --prefix src/frontend run build`
-- **Lệnh cấm**: Cấm chạy `npm install` trần trong sandbox; cấm sửa file ngoài `src/frontend/`.
+  - `npm --prefix src/frontend run build` (Tích hợp `NEXT_TELEMETRY_DISABLED=1` chạy offline chuẩn sandbox)
+- **Quy chuẩn Sandbox An Toàn Tuyệt Đối**:
+  - Cấm chạy `npm install` trần trong sandbox; khi cần thêm package, cắm cờ `[DEPENDENCY REQUIRED]` để Tech Lead cập nhật.
+  - Cấm import external remote fonts (`next/font/google`) vì gây timeout trong môi trường sandbox chặn mạng; luôn dùng system fonts hoặc Tailwind CSS sans utility classes.
+  - Cấm sửa file ngoài `src/frontend/`.
 
 ---
 
