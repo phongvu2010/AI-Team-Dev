@@ -20,6 +20,18 @@ import re
 import sys
 from pathlib import Path
 
+# Ensure UTF-8 console output on Windows to prevent UnicodeEncodeError
+if hasattr(sys.stdout, "reconfigure") and sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure") and sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
+# Auto-add src to sys.path so PYTHONPATH=src is optional
+base_dir = Path(__file__).resolve().parent.parent
+src_dir = base_dir / "src"
+if str(src_dir) not in sys.path:
+    sys.path.insert(0, str(src_dir))
+
 SNAKE_CASE_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 CAMEL_CASE_PATTERN = re.compile(r"^[a-z]+[A-Z0-9]")
 

@@ -265,20 +265,25 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
   - Khi test các tính năng đặc thù PostgreSQL (`pgvector`, `tsvector`, native enum, array operators), gắn decorator `@pytest.mark.postgres_only`.
   - SQLite in-memory test mặc định sẽ tự động skip an toàn các test này mà không báo `FAILED`.
   - Khi có PostgreSQL: `TEST_DATABASE_URL=postgresql+asyncpg://... PYTHONPATH=src .venv/bin/pytest src/backend/tests -v`.
-- Thực thi chuỗi lệnh kiểm tra (4 tầng toàn diện):
-  ```bash
-  # 1. Linter & Code Standards
-  .venv/bin/ruff check src/
-
-  # 2. Automated Contract & Schema Drift Verification
-  PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py <feature-slug>
-
-  # 3. Backend & DB Testing (SQLite in-memory fallback + Contract Verification)
-  PYTHONPATH=src ./.venv/bin/pytest src/backend/tests -v
-
-  # 4. Frontend TypeScript Integrity
-  npm --prefix src/frontend run typecheck
-  ```
+- Thực thi chuỗi lệnh kiểm tra (4 tầng toàn diện — Đa nền tảng):
+  - **Khuyên dùng (1-Click Tự động trên mọi HĐH)**:
+    ```bash
+    python scripts/smoke_test.py
+    ```
+  - **Linux / macOS**:
+    ```bash
+    .venv/bin/ruff check src/
+    .venv/bin/python scripts/verify_contracts.py <feature-slug>
+    .venv/bin/pytest src/backend/tests -v
+    npm --prefix src/frontend run typecheck
+    ```
+  - **Windows (PowerShell / CMD)**:
+    ```powershell
+    python -m ruff check src/
+    python scripts/verify_contracts.py <feature-slug>
+    python -m pytest src/backend/tests -v
+    npm --prefix src/frontend run typecheck
+    ```
 - Xuất báo cáo tại `docs/specs/<feature-slug>/test-report.md` (kèm Chỉ số Metrics và Structured Bug Tickets).
 - **Vòng lặp Self-Healing (Tự sửa lỗi) & Bảo Toàn Ngữ Cảnh (Context Preservation)**:
   - Nếu `overall_status: FAILED`:

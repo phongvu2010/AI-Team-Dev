@@ -1,23 +1,41 @@
 #!/usr/bin/env bash
-# Day-0 Smoke Verification Script for AI Team Dev (Antigravity 2.0)
+# Day-0 Smoke Verification Script for AI Team Dev (Cross-Platform Bash)
 set -e
 
 echo "======================================================================"
-echo "🚀 Running AI Team Dev — Day-0 Smoke Verification"
+echo "🚀 Running AI Team Dev — Day-0 Smoke Verification (Bash)"
 echo "======================================================================"
 
+# Locate Python in .venv (Linux/macOS .venv/bin vs Windows Git Bash .venv/Scripts) or PATH
+if [ -f ".venv/bin/python" ]; then
+    PY=".venv/bin/python"
+elif [ -f ".venv/Scripts/python.exe" ]; then
+    PY=".venv/Scripts/python.exe"
+elif command -v python3 >/dev/null 2>&1; then
+    PY="python3"
+else
+    PY="python"
+fi
+
+echo "ℹ️ Using Python interpreter: $PY"
 echo ""
+
 echo "1️⃣ Checking Python Linting (Ruff)..."
-.venv/bin/ruff check src/
+$PY -m ruff check src/
 echo "   ✅ Ruff checks passed!"
 
 echo ""
-echo "2️⃣ Running Backend & DB Tests (Pytest SQLite In-Memory)..."
-PYTHONPATH=src .venv/bin/pytest src/backend/tests -v
+echo "2️⃣ Verifying Cross-Layer Contracts..."
+$PY scripts/verify_contracts.py
+echo "   ✅ Contract verification passed!"
+
+echo ""
+echo "3️⃣ Running Backend & DB Tests (Pytest SQLite In-Memory)..."
+$PY -m pytest src/backend/tests -v
 echo "   ✅ Pytest passed!"
 
 echo ""
-echo "3️⃣ Checking Frontend TypeScript (Strict Mode)..."
+echo "4️⃣ Checking Frontend TypeScript (Strict Mode)..."
 npm --prefix src/frontend run typecheck
 echo "   ✅ Frontend Typecheck passed!"
 

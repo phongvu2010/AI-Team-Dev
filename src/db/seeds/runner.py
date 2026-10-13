@@ -8,12 +8,25 @@ import asyncio
 import importlib
 import logging
 import pkgutil
+import sys
 from collections.abc import Callable, Coroutine
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.session import AsyncSessionLocal
+# Ensure UTF-8 console output on Windows
+if hasattr(sys.stdout, "reconfigure") and sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure") and sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
+# Ensure 'src' is in sys.path automatically
+_src_dir = Path(__file__).resolve().parent.parent.parent
+if str(_src_dir) not in sys.path:
+    sys.path.insert(0, str(_src_dir))
+
+from db.session import AsyncSessionLocal  # noqa: E402
 
 logger = logging.getLogger("db.seeds")
 

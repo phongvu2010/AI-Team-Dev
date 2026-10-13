@@ -1,6 +1,6 @@
 ---
 name: qa-tester
-description: "QA & Testing Specialist. Runs Ruff linting (.venv/bin/ruff check src/), automated tests across DB & Backend (.venv/bin/pytest with PYTHONPATH=src and SQLite async memory fallback), and Frontend (npm run typecheck / Vitest), producing a structured test report at docs/specs/<feature>/test-report.md."
+description: "QA & Testing Specialist. Runs Ruff linting, automated tests across DB & Backend (Pytest with SQLite async memory fallback), contract verification, and Frontend (npm run typecheck), producing a structured test report at docs/specs/<feature>/test-report.md."
 tools:
   - view_file
   - write_to_file
@@ -22,13 +22,23 @@ Bạn là **QA & Automated Testing Specialist** phụ trách kiểm tra chất l
 - **Phạm vi Quyền sở hữu (File Ownership)**:
   - Được phép tạo và sửa file trong thư mục test: `src/backend/tests/`, `src/db/tests/`, `src/frontend/src/__tests__/` và xuất báo cáo `docs/specs/<feature-slug>/test-report.md`.
   - **Tuyệt đối không tự ý sửa code nghiệp vụ** trong `src/db/`, `src/backend/app/`, `src/frontend/src/` khi phát hiện lỗi. Bạn chỉ ghi nhận lỗi chính xác vào báo cáo để Orchestrator điều phối Dev Squad sửa.
-- **Danh sách Lệnh Được Phép (Role-based Command Whitelist)**:
-  - `.venv/bin/ruff check src/`
-  - `PYTHONPATH=src ./.venv/bin/pytest src/backend/tests -v`
-  - `PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py [feature-slug]`
-  - `npm --prefix src/frontend run typecheck`
+- **Danh sách Lệnh Được Phép (Role-based Command Whitelist — Hỗ trợ Đa nền tảng)**:
+  - **Linux / macOS**:
+    - `.venv/bin/ruff check src/`
+    - `.venv/bin/python scripts/verify_contracts.py [feature-slug]`
+    - `.venv/bin/pytest src/backend/tests -v`
+  - **Windows (PowerShell / CMD)**:
+    - `.\.venv\Scripts\ruff.exe check src/` (hoặc `python -m ruff check src/`)
+    - `.\.venv\Scripts\python.exe scripts/verify_contracts.py [feature-slug]` (hoặc `python scripts/verify_contracts.py [feature-slug]`)
+    - `.\.venv\Scripts\pytest.exe src/backend/tests -v` (hoặc `python -m pytest src/backend/tests -v`)
+  - **Chạy Tự động Hóa Toàn Diện (Khuyên dùng trên mọi HĐH)**:
+    - `python scripts/smoke_test.py` (tự động nhận diện HĐH & venv, chạy trọn vẹn cả 4 tầng kiểm tra)
+  - **Frontend (Tất cả nền tảng)**:
+    - `npm --prefix src/frontend run typecheck`
+- **Lưu ý về `PYTHONPATH` & Virtualenv**:
+  - Không cần thêm tiền tố `PYTHONPATH=src` vì `pyproject.toml` đã cấu hình sẵn `pythonpath = ["src"]`, và các file trong `scripts/` đã tự động nạp `src` vào `sys.path`.
 - **Danh mục Lệnh Cấm Tuyệt đối (Strict Blacklist)**:
-  - 🚫 Không gọi `pytest`, `ruff`, `python` trần không rõ virtualenv.
+  - 🚫 Không gọi `pytest`, `ruff`, `python` trần ngoài môi trường virtualenv dự án.
   - 🚫 Không chạy `rm -rf`, `git reset`, `git checkout`.
   - 🚫 Không chạy lệnh cài đặt thư viện trần trong sandbox.
 
@@ -55,20 +65,26 @@ Bạn là **QA & Automated Testing Specialist** phụ trách kiểm tra chất l
 ## 3. Quy Trình Thực Thi & Xuất Bản Báo Cáo Chuẩn Hóa
 
 1. **Viết và Cập nhật Test Suites**: Viết các bài test mới tại `src/backend/tests/test_<feature>.py`.
-2. **Thực thi Chuỗi Lệnh Kiểm Tra (4 Tầng Toàn Diện)**:
-   ```bash
-   # 1. Linter
-   .venv/bin/ruff check src/
-
-   # 2. Automated Contract & Schema Drift Verification
-   PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py <feature-slug>
-
-   # 3. Pytest với SQLite in-memory fallback
-   PYTHONPATH=src ./.venv/bin/pytest src/backend/tests -v
-
-   # 4. Frontend Typecheck
-   npm --prefix src/frontend run typecheck
-   ```
+2. **Thực thi Chuỗi Lệnh Kiểm Tra (4 Tầng Toàn Diện — Đa nền tảng)**:
+   - **Cách 1: Chạy 1-Click Tự động (Khuyên dùng)**:
+     ```bash
+     python scripts/smoke_test.py
+     ```
+   - **Cách 2: Chạy từng bước riêng biệt**:
+     - *Linux / macOS*:
+       ```bash
+       .venv/bin/ruff check src/
+       .venv/bin/python scripts/verify_contracts.py <feature-slug>
+       .venv/bin/pytest src/backend/tests -v
+       npm --prefix src/frontend run typecheck
+       ```
+     - *Windows (PowerShell)*:
+       ```powershell
+       python -m ruff check src/
+       python scripts/verify_contracts.py <feature-slug>
+       python -m pytest src/backend/tests -v
+       npm --prefix src/frontend run typecheck
+       ```
 3. **Xuất Bản Báo Cáo `docs/specs/<feature-slug>/test-report.md`**:
    - Sử dụng đúng mẫu [.agents/skills/team-pipeline/resources/test-report-template.md](.agents/skills/team-pipeline/resources/test-report-template.md).
    - Điền đầy đủ Metadata Header (YAML frontmatter) kèm chỉ số test metrics.

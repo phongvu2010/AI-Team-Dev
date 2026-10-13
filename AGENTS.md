@@ -121,31 +121,31 @@ Mỗi tác tử chỉ được phép thực thi các lệnh trong danh mục whi
   - Chỉ sử dụng công cụ đọc/ghi tài liệu: `view_file`, `write_to_file`, `replace_file_content`.
   - Không thực thi lệnh shell làm thay đổi mã nguồn.
 - **`db-dev`** (Chỉ thao tác trong `src/db/`):
-  - `.venv/bin/ruff check src/db/`
-  - `python3 -m py_compile src/db/...`
-  - `PYTHONPATH=src .venv/bin/python src/db/migrations/generate_offline_migration.py <slug>` (khởi tạo migration khi không có PostgreSQL)
-  - `alembic ...` (với PostgreSQL Docker local hoặc Supabase qua `DIRECT_DATABASE_URL` port 5432)
-  - `PYTHONPATH=src .venv/bin/python src/db/seeds/runner.py`
+  - *Linux / macOS*: `.venv/bin/ruff check src/db/`, `.venv/bin/python src/db/migrations/generate_offline_migration.py <slug>`, `.venv/bin/python src/db/seeds/runner.py`
+  - *Windows*: `python -m ruff check src/db/`, `python src/db/migrations/generate_offline_migration.py <slug>`, `python src/db/seeds/runner.py`
+  - *Đa nền tảng*: `python -m py_compile src/db/...`, `alembic ...` (với PostgreSQL Docker local hoặc Supabase qua `DIRECT_DATABASE_URL` port 5432)
 - **`backend-dev`** (Chỉ thao tác trong `src/backend/`):
-  - `.venv/bin/ruff check src/backend/`
-  - `python3 -m py_compile src/backend/...`
+  - *Linux / macOS*: `.venv/bin/ruff check src/backend/`
+  - *Windows*: `python -m ruff check src/backend/`
+  - *Đa nền tảng*: `python -m py_compile src/backend/...`
 - **`frontend-dev`** (Chỉ thao tác trong `src/frontend/`):
   - `npm --prefix src/frontend run typecheck`
   - `npm --prefix src/frontend run lint`
   - `npm --prefix src/frontend run build` (tích hợp `NEXT_TELEMETRY_DISABLED=1` chạy offline chuẩn sandbox)
 - **`qa-tester`** (Thao tác kiểm tra toàn diện):
-  - `.venv/bin/ruff check src/`
-  - `PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py <feature-slug>`
-  - `PYTHONPATH=src ./.venv/bin/pytest src/backend/tests -v`
-  - `npm --prefix src/frontend run typecheck`
+  - *Chạy 1-Click Tự động (Đa nền tảng)*: `python scripts/smoke_test.py`
+  - *Linux / macOS*: `.venv/bin/ruff check src/`, `.venv/bin/python scripts/verify_contracts.py <feature-slug>`, `.venv/bin/pytest src/backend/tests -v`
+  - *Windows*: `python -m ruff check src/`, `python scripts/verify_contracts.py <feature-slug>`, `python -m pytest src/backend/tests -v`
+  - *Frontend*: `npm --prefix src/frontend run typecheck`
 - **`code-reviewer`** (Chỉ thao tác thẩm định read-only):
   - `git status --short`
   - `git diff --stat`
   - `git diff -- src/ docs/ ':!*package-lock.json' ':!*.lock' ':!*.min.*'`
   - `git diff`
 - **`tech-lead` (Orchestrator)**:
-  - `python3 -m py_compile src/db/models/*.py` (Wave Handshake Gate)
-  - `PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py <feature-slug>`
+  - `python -m py_compile src/db/models/*.py` (Wave Handshake Gate)
+  - `python scripts/verify_contracts.py <feature-slug>`
+  - `python scripts/smoke_test.py`
   - Cập nhật các file manifest gốc (`pyproject.toml`, `docker-compose.yml`, `alembic.ini`, `src/frontend/package.json`) khi nhận cờ `[DEPENDENCY REQUIRED]`.
   - Quản lý vòng đời và dọn dẹp subagents qua `manage_subagents` (`Action: "kill"` / `"kill_all"`).
   - `git status`, `git add`, `git commit` đóng gói tính năng.
@@ -156,7 +156,7 @@ Mọi tác tử (kể cả Orchestrator) **tuyệt đối không được phép 
 - 🚫 **Lệnh xóa DB trực tiếp**: `dropdb`, `DROP DATABASE`, `rm -rf src/db/migrations/versions/*`.
 - 🚫 **Lệnh/Thao tác sửa File Cấu hình Gốc (Root Configuration Protection)**: Các subagents (`ba`, `db-dev`, `backend-dev`, `frontend-dev`, `qa-tester`, `code-reviewer`, `planner`) **TUYỆT ĐỐI KHÔNG ĐƯỢC PHÉP TRỰC TIẾP CHỈNH SỬA** các file cấu hình gốc và manifest: `pyproject.toml`, `docker-compose.yml`, `alembic.ini`, `src/frontend/package.json`, `package-lock.json`. Khi cần thêm thư viện, subagent BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]` trong báo cáo gửi về Tech Lead. **DUY NHẤT Tech Lead Orchestrator** có thẩm quyền chỉnh sửa các file manifest này để triệt tiêu hoàn toàn rủi ro race condition trong `Workspace: "inherit"`.
 - 🚫 **Lệnh cài đặt trần trong Sandbox**: `pip install <pkg>` hoặc `npm install <pkg>` trần không có mạng.
-- 🚫 **Lệnh chạy không đúng Virtualenv**: Không gọi `pytest`, `ruff`, `python` trần của hệ thống. Luôn dùng `.venv/bin/...` kết hợp `PYTHONPATH=src`.
+- 🚫 **Lệnh chạy không đúng Virtualenv**: Không gọi `pytest`, `ruff`, `python` trần của hệ điều hành ngoài virtualenv dự án. Luôn dùng virtualenv tương ứng (`.venv/bin/` trên Linux/macOS, `.\.venv\Scripts\` hoặc `python -m <module>` trên Windows).
 - 🚫 **Lệnh import font ngoại trú trong Sandbox**: Không dùng `next/font/google` fetch online gây nghẽn timeout; luôn dùng system fonts hoặc Tailwind CSS classes để build offline 100%.
 - 🚫 **Lệnh vi phạm phân vùng file (Path Boundary Violation)**: Subagent không bao giờ được phép sửa đổi hoặc xóa file nằm ngoài thư mục quyền sở hữu của mình (`src/db/` cho db-dev, `src/backend/` cho backend-dev, `src/frontend/` cho frontend-dev).
 

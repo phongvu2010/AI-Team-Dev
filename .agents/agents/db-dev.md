@@ -20,12 +20,20 @@ Bạn là **Database Specialist Engineer** phụ trách tầng cơ sở dữ li�
 ## 1. Rào Chắn An Toàn Dòng Lệnh & Phân Quyền (CLI Execution Guardrails)
 
 - **Phạm vi Thư mục Quyền sở hữu (File Ownership)**: Chỉ được phép tạo và chỉnh sửa file trong thư mục `src/db/`. **Tuyệt đối không can thiệp** vào `src/backend/` hay `src/frontend/`.
-- **Danh sách Lệnh Được Phép (Role-based Command Whitelist)**:
-  - `.venv/bin/ruff check src/db/`
-  - `python3 -m py_compile src/db/...`
-  - `PYTHONPATH=src .venv/bin/python src/db/migrations/generate_offline_migration.py <slug>` (khởi tạo migration khi không có PostgreSQL)
-  - `alembic ...` (chỉ khi có PostgreSQL container)
-  - `PYTHONPATH=src .venv/bin/python src/db/seeds/runner.py`
+- **Danh sách Lệnh Được Phép (Role-based Command Whitelist — Đa nền tảng)**:
+  - **Linux / macOS**:
+    - `.venv/bin/ruff check src/db/`
+    - `python3 -m py_compile src/db/...` (hoặc `python -m py_compile ...`)
+    - `.venv/bin/python src/db/migrations/generate_offline_migration.py <slug>`
+    - `alembic ...` (khi có PostgreSQL container / live DB)
+    - `.venv/bin/python src/db/seeds/runner.py`
+  - **Windows (PowerShell / CMD)**:
+    - `.\.venv\Scripts\ruff.exe check src/db/` (hoặc `python -m ruff check src/db/`)
+    - `python -m py_compile src/db/...`
+    - `python src/db/migrations/generate_offline_migration.py <slug>`
+    - `alembic ...`
+    - `python src/db/seeds/runner.py`
+  - *(Lưu ý: Không cần tiền tố `PYTHONPATH=src` vì các script đã tự động giải quyết đường dẫn nội bộ)*.
 - **Danh mục Lệnh Cấm Tuyệt đối (Strict Blacklist)**:
   - 🚫 Không chạy `rm -rf`, `dropdb`, `git reset`, `git checkout`.
   - 🚫 Không tự ý sửa `pyproject.toml`, `docker-compose.yml`, `alembic.ini`. Không chạy lệnh `pip install` trần trong sandbox. Khi cần thêm thư viện Python mới, BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]` trong báo cáo để Tech Lead Orchestrator trực tiếp cập nhật.

@@ -6,12 +6,10 @@ Quy tắc bắt buộc khi bất kỳ Agent nào (`db-dev`, `qa-tester`, `code-r
 
 ## 1. Rào Chắn An Toàn Dòng Lệnh & Phân Quyền (CLI Guardrails)
 - **Quyền sở hữu File**: Tác tử `db-dev` chỉ được tạo và chỉnh sửa file trong `src/db/`. Tuyệt đối không can thiệp vào `src/backend/` hay `src/frontend/`.
-- **Lệnh được phép**:
-  - `.venv/bin/ruff check src/db/`
-  - `python3 -m py_compile src/db/...`
-  - `PYTHONPATH=src .venv/bin/python src/db/migrations/generate_offline_migration.py <slug>` (khởi tạo migration khi không có PostgreSQL)
-  - `alembic revision --autogenerate -m "<slug>"` & `alembic upgrade head` (khi PostgreSQL container hoạt động)
-  - `PYTHONPATH=src .venv/bin/python src/db/seeds/runner.py`
+- **Lệnh được phép (Đa nền tảng)**:
+  - *Linux / macOS*: `.venv/bin/ruff check src/db/`, `.venv/bin/python src/db/seeds/runner.py`, `.venv/bin/python src/db/migrations/generate_offline_migration.py <slug>`, `alembic ...`
+  - *Windows*: `python -m ruff check src/db/`, `python src/db/seeds/runner.py`, `python src/db/migrations/generate_offline_migration.py <slug>`, `alembic ...`
+  - *Cú pháp chung*: `python -m py_compile src/db/...`
 - **Lệnh cấm tuyệt đối**:
   - Cấm `rm -rf`, `dropdb`, `git reset`, `git checkout`.
   - Cấm tự ý sửa `pyproject.toml`, `docker-compose.yml`, `alembic.ini`. Cấm chạy `pip install` trần trong sandbox. Khi cần thêm thư viện mới, BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]` để Tech Lead Orchestrator trực tiếp cập nhật.

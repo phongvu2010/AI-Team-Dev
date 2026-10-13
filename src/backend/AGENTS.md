@@ -6,9 +6,9 @@ Quy tắc bắt buộc khi bất kỳ Agent nào (`backend-dev`, `qa-tester`, `c
 
 ## 1. Rào Chắn An Toàn Dòng Lệnh & Phân Quyền (CLI Guardrails)
 - **Quyền sở hữu File**: Tác tử `backend-dev` chỉ được tạo và chỉnh sửa file trong `src/backend/`. Tuyệt đối không can thiệp vào `src/db/` hay `src/frontend/`.
-- **Lệnh được phép**:
-  - `.venv/bin/ruff check src/backend/`
-  - `python3 -m py_compile src/backend/...`
+- **Lệnh được phép (Đa nền tảng)**:
+  - *Linux / macOS*: `.venv/bin/ruff check src/backend/`, `python3 -m py_compile src/backend/...`
+  - *Windows*: `python -m ruff check src/backend/`, `python -m py_compile src/backend/...`
 - **Lệnh cấm tuyệt đối**:
   - Cấm `rm -rf`, `dropdb`, `git reset`, `git checkout`.
   - Cấm tự ý sửa `pyproject.toml`, `docker-compose.yml`, `alembic.ini`. Cấm chạy `pip install` trần trong sandbox. Khi cần thêm thư viện Python mới, BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]` để Tech Lead Orchestrator trực tiếp cập nhật.

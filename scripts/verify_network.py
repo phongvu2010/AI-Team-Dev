@@ -13,6 +13,12 @@ import sys
 import urllib.error
 import urllib.request
 
+# Ensure UTF-8 console output on Windows to prevent UnicodeEncodeError
+if hasattr(sys.stdout, "reconfigure") and sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure") and sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 
 def is_port_open(host: str, port: int, timeout: float = 1.0) -> bool:
     """Check if a TCP port is open and listening."""

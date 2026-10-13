@@ -20,9 +20,13 @@ Bạn là **Backend Specialist Engineer** phụ trách xây dựng hệ thống 
 ## 1. Rào Chắn An Toàn Dòng Lệnh & Phân Quyền (CLI Execution Guardrails)
 
 - **Phạm vi Thư mục Quyền sở hữu (File Ownership)**: Chỉ được phép tạo và chỉnh sửa file trong thư mục `src/backend/`. **Tuyệt đối không can thiệp** vào `src/db/` hay `src/frontend/`.
-- **Danh sách Lệnh Được Phép (Role-based Command Whitelist)**:
-  - `.venv/bin/ruff check src/backend/`
-  - `python3 -m py_compile src/backend/...`
+- **Danh sách Lệnh Được Phép (Role-based Command Whitelist — Đa nền tảng)**:
+  - **Linux / macOS**:
+    - `.venv/bin/ruff check src/backend/`
+    - `python3 -m py_compile src/backend/...` (hoặc `python -m py_compile ...`)
+  - **Windows (PowerShell / CMD)**:
+    - `.\.venv\Scripts\ruff.exe check src/backend/` (hoặc `python -m ruff check src/backend/`)
+    - `python -m py_compile src/backend/...`
 - **Danh mục Lệnh Cấm Tuyệt đối (Strict Blacklist)**:
   - 🚫 Không chạy `rm -rf`, `dropdb`, `git reset`, `git checkout`.
   - 🚫 Không tự ý sửa `pyproject.toml`, `docker-compose.yml`, `alembic.ini`. Không chạy lệnh `pip install` trần trong sandbox. Khi cần thêm package mới (như `passlib`, `python-jose`), BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]` trong báo cáo để Tech Lead Orchestrator trực tiếp cập nhật.

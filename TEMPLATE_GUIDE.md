@@ -163,9 +163,9 @@ Hệ thống cung cấp sẵn 2 chế độ Docker linh hoạt:
 
 ### 2.5. Nạp Dữ liệu Mẫu Khởi đầu (Seed Data — Tuỳ chọn)
 Khi đã khởi chạy PostgreSQL hoặc cần nạp dữ liệu mẫu ban đầu:
-```bash
-PYTHONPATH=src .venv/bin/python src/db/seeds/runner.py
-```
+- Trên Linux / macOS: `.venv/bin/python src/db/seeds/runner.py`
+- Trên Windows: `python src/db/seeds/runner.py`
+*(Script tự động nạp thư mục `src` mà không cần tiền tố `PYTHONPATH=src`)*.
 
 ---
 
@@ -173,14 +173,27 @@ PYTHONPATH=src .venv/bin/python src/db/seeds/runner.py
 
 Trước khi bắt đầu bất kỳ câu lệnh AI nào, hãy chạy lệnh kiểm tra toàn diện để đảm bảo chuỗi công cụ đã sẵn sàng:
 
+### Cách 1: Chạy 1-Click Tự động Đa nền tảng (Khuyên dùng)
 ```bash
-.venv/bin/ruff check src/ && PYTHONPATH=src .venv/bin/pytest src/backend/tests -v && npm --prefix src/frontend run build
+python scripts/smoke_test.py
 ```
+*(Tự động phát hiện Windows / Linux / macOS, kích hoạt virtualenv tương ứng và chạy đủ 4 tầng kiểm tra).*
+
+### Cách 2: Chạy qua Shell riêng biệt
+- **Trên Windows (PowerShell)**:
+  ```powershell
+  .\scripts\smoke_test.ps1
+  ```
+- **Trên macOS / Linux (Bash)**:
+  ```bash
+  bash scripts/smoke_test.sh
+  ```
 
 **Kết quả kỳ vọng**:
 * **Ruff**: `All checks passed!`
-* **Pytest**: `3 passed in 0.03s` (Pass cả endpoint `/health` và session async DB)
-* **Frontend Build**: `✓ Compiled successfully` (Next.js App Router render static pages, typecheck sạch sẽ).
+* **Contract Sync**: `✅ CONTRACT VERIFICATION PASSED: 100% snake_case compliance & zero drift detected.`
+* **Pytest**: `4 passed, 1 skipped in 0.05s` (Pass cả endpoint `/health` và session async DB)
+* **Frontend Typecheck**: `✓ Frontend Typecheck passed!`
 
 ---
 
