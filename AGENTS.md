@@ -23,7 +23,7 @@ Bạn là **Tech Lead / Orchestrator Agent** điều phối hệ thống **Multi
       ├──► Phase 2: DEV SQUADS (Quy trình 2-Wave Pipelined + Wave Handshake Gate)
       │      ├── Wave 1 (Song song):
       │      │     ├── `db-dev`       (PostgreSQL/Supabase + SQLAlchemy 2.0 tại `src/db/`)
-      │      │     └── `frontend-dev` (React 19 / Next.js 15 tại `src/frontend/` theo API Contract)
+      │      │     └── `frontend-dev` (Web: Next.js 15 / React Vite tại `src/frontend/` & Mobile: React Native Expo tại `src/mobile/`)
       │      ├── [Wave Handshake Gate] -> Kích hoạt ngay khi `db-dev` xong models
       │      └── Wave 2 (Pipelined Execution):
       │            └── `backend-dev`  (FastAPI + Pydantic v2 tại `src/backend/`, gối đầu song song với `frontend-dev`)
@@ -69,12 +69,21 @@ Toàn bộ mã nguồn thực thi được tổ chức thống nhất trong thư
     - `DIRECT_DATABASE_URL`: BẮT BUỘC dùng cho Alembic DDL migrations kết nối qua Session Mode hoặc Direct (`port 5432`, `ssl=require`) do Transaction Pooler không hỗ trợ prepared statements và session-level locks khi thực thi migration DDL.
   - Thư mục `src/db/seeds/` cung cấp kịch bản seed dữ liệu mẫu qua `PYTHONPATH=src .venv/bin/python src/db/seeds/runner.py`.
 - **Backend (`src/backend/`)**: Python 3.11+, FastAPI, Pydantic v2 (`ConfigDict(from_attributes=True)`), Linter `ruff` (.venv/bin/ruff), Test runner `pytest` (luôn dùng `.venv/bin/pytest`) + `httpx.AsyncClient`. Import nội bộ dạng `from db.models...` nhờ cấu hình `pythonpath = ["src"]`. Expose endpoints `/health` và `/api/v1/health` kèm metadata chẩn đoán, cấu hình `CORS_ORIGINS` hỗ trợ cả port 3000 và 3001.
-- **Frontend (`src/frontend/`)**: Next.js 15 (App Router), React 19, TypeScript (Strict mode), Tailwind CSS.
-  - **Tự động hóa Dọn dẹp Cache & Cổng Mạng (Port & Network Alignment)**:
-    - Typed API Client trong `src/frontend/src/lib/api/client.ts` tự động phân giải URL qua `getApiBaseUrl()` (hỗ trợ cả SSR `INTERNAL_API_URL` và Browser `NEXT_PUBLIC_API_URL`).
-    - Hàm `clearClientApiCache()` tự động dọn sạch `localStorage`, `sessionStorage` và Browser `CacheStorage` khi chuyển từ Mock sang Live API.
-    - Header yêu cầu luôn kèm `Cache-Control: 'no-cache, no-store, must-revalidate'`, `Pragma: 'no-cache'`, `Expires: '0'`, và tự động gắn query param cache-buster `_t=Date.now()` khi `invalidateCache: true`.
-    - Cung cấp hàm `checkApiHealth()` và script `scripts/verify_network.py` để tự động kiểm tra thông mạng giữa Frontend (port 3000/3001), Backend (port 8000) và PostgreSQL (port 5432).
+- **Frontend & Mobile Client (`src/frontend/` & `src/mobile/`)**:
+  - **3 Tùy chọn Nền tảng Linh hoạt**:
+    1. *Web Next.js 15 (Mặc định)*: App Router, React 19, TypeScript (Strict), Tailwind CSS tại `src/frontend/`.
+    2. *Web React Vite*: React 18/19, TypeScript (Strict), Vite, Tailwind CSS, Lucide icons tại `src/frontend/`.
+    3. *Mobile App React Native*: Expo SDK 51/52, Expo Router, NativeWind v4 (Tailwind CSS Mobile), SafeAreaProvider tại `src/mobile/`.
+  - **Quản lý & Chuyển đổi Khung làm việc (`scripts/setup_frontend.py`)**:
+    - Kiểm tra trạng thái hiện tại: `python scripts/setup_frontend.py --status`
+    - Chuyển sang Web Vite: `python scripts/setup_frontend.py --preset vite`
+    - Chuyển lại Web Next.js: `python scripts/setup_frontend.py --preset nextjs`
+    - Kích hoạt thêm Mobile App: `python scripts/setup_frontend.py --add-mobile`
+  - **Universal Typed API Client Đa Nền Tảng (`client.ts`)**:
+    - Phân giải URL qua `getApiBaseUrl()`: hỗ trợ SSR (`INTERNAL_API_URL`), Browser Next.js (`NEXT_PUBLIC_API_URL`), Vite (`VITE_API_URL`), và Mobile Expo (`EXPO_PUBLIC_API_URL`).
+    - *Android Emulator Loopback*: Tự động ánh xạ `http://10.0.2.2:8000` trên Android emulator thay thế `localhost`.
+    - Dọn dẹp cache an toàn: `clearClientApiCache()` (chống crash trên SSR và React Native), header `Cache-Control: 'no-cache, no-store, must-revalidate'`, `Pragma: 'no-cache'`, `Expires: '0'`, và cache-buster `_t=Date.now()`.
+    - Script kiểm tra thông mạng đa cổng: `python scripts/verify_network.py` (Frontend ports 3000/3001/5173, Backend 8000, DB 5432).
 - **Hồ sơ Chuyển giao Chuẩn hóa (`docs/specs/<feature-slug>/`)**:
   - `prd.md`: Bản đặc tả yêu cầu sản phẩm & nghiệp vụ (PRD), chân dung người dùng (Personas), hành trình người dùng (User Journeys), yêu cầu chức năng (FRs), quy tắc nghiệp vụ (BRs), kịch bản góc (Edge Cases), tiêu chí nghiệm thu nghiệp vụ (BACs) và nhật ký phỏng vấn người dùng.
   - `plan.md`: Bản thiết kế kỹ thuật, Ma trận dữ liệu 3 tầng (Data Contract Matrix), OpenAPI Contract, UI Spec, Ma trận truy xuất Acceptance Criteria.
@@ -128,15 +137,14 @@ Mỗi tác tử chỉ được phép thực thi các lệnh trong danh mục whi
   - *Linux / macOS*: `.venv/bin/ruff check src/backend/`
   - *Windows*: `python -m ruff check src/backend/`
   - *Đa nền tảng*: `python -m py_compile src/backend/...`
-- **`frontend-dev`** (Chỉ thao tác trong `src/frontend/`):
-  - `npm --prefix src/frontend run typecheck`
-  - `npm --prefix src/frontend run lint`
-  - `npm --prefix src/frontend run build` (tích hợp `NEXT_TELEMETRY_DISABLED=1` chạy offline chuẩn sandbox)
+- **`frontend-dev`** (Thao tác trong `src/frontend/` và `src/mobile/`):
+  - *Web*: `npm --prefix src/frontend run typecheck`, `npm --prefix src/frontend run lint`, `npm --prefix src/frontend run build` (tích hợp `NEXT_TELEMETRY_DISABLED=1` chạy offline chuẩn sandbox)
+  - *Mobile (khi có `src/mobile/`)*: `npm --prefix src/mobile run typecheck`, `npm --prefix src/mobile run lint`
 - **`qa-tester`** (Thao tác kiểm tra toàn diện):
-  - *Chạy 1-Click Tự động (Đa nền tảng)*: `python scripts/smoke_test.py`
+  - *Chạy 1-Click Tự động (Đa nền tảng)*: `python scripts/smoke_test.py` (tự động phát hiện cả Web & Mobile)
   - *Linux / macOS*: `.venv/bin/ruff check src/`, `.venv/bin/python scripts/verify_contracts.py <feature-slug>`, `.venv/bin/pytest src/backend/tests -v`
   - *Windows*: `python -m ruff check src/`, `python scripts/verify_contracts.py <feature-slug>`, `python -m pytest src/backend/tests -v`
-  - *Frontend*: `npm --prefix src/frontend run typecheck`
+  - *Client Typecheck*: `npm --prefix src/frontend run typecheck`, `npm --prefix src/mobile run typecheck` (khi có `src/mobile/`)
 - **`code-reviewer`** (Chỉ thao tác thẩm định read-only):
   - `git status --short`
   - `git diff --stat`
@@ -146,7 +154,7 @@ Mỗi tác tử chỉ được phép thực thi các lệnh trong danh mục whi
   - `python -m py_compile src/db/models/*.py` (Wave Handshake Gate)
   - `python scripts/verify_contracts.py <feature-slug>`
   - `python scripts/smoke_test.py`
-  - Cập nhật các file manifest gốc (`pyproject.toml`, `docker-compose.yml`, `alembic.ini`, `src/frontend/package.json`) khi nhận cờ `[DEPENDENCY REQUIRED]`.
+  - Cập nhật các file manifest gốc (`pyproject.toml`, `docker-compose.yml`, `alembic.ini`, `src/frontend/package.json`, `src/mobile/package.json`) khi nhận cờ `[DEPENDENCY REQUIRED]`.
   - Quản lý vòng đời và dọn dẹp subagents qua `manage_subagents` (`Action: "kill"` / `"kill_all"`).
   - `git status`, `git add`, `git commit` đóng gói tính năng.
 
@@ -154,11 +162,11 @@ Mỗi tác tử chỉ được phép thực thi các lệnh trong danh mục whi
 Mọi tác tử (kể cả Orchestrator) **tuyệt đối không được phép thực thi** các lệnh sau:
 - 🚫 **Lệnh phá hủy dữ liệu/lịch sử Git**: `rm -rf` ngoài thư mục tạm, `git reset --hard`, `git clean -fdx`, `git checkout .`, `git push --force`.
 - 🚫 **Lệnh xóa DB trực tiếp**: `dropdb`, `DROP DATABASE`, `rm -rf src/db/migrations/versions/*`.
-- 🚫 **Lệnh/Thao tác sửa File Cấu hình Gốc (Root Configuration Protection)**: Các subagents (`ba`, `db-dev`, `backend-dev`, `frontend-dev`, `qa-tester`, `code-reviewer`, `planner`) **TUYỆT ĐỐI KHÔNG ĐƯỢC PHÉP TRỰC TIẾP CHỈNH SỬA** các file cấu hình gốc và manifest: `pyproject.toml`, `docker-compose.yml`, `alembic.ini`, `src/frontend/package.json`, `package-lock.json`. Khi cần thêm thư viện, subagent BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]` trong báo cáo gửi về Tech Lead. **DUY NHẤT Tech Lead Orchestrator** có thẩm quyền chỉnh sửa các file manifest này để triệt tiêu hoàn toàn rủi ro race condition trong `Workspace: "inherit"`.
+- 🚫 **Lệnh/Thao tác sửa File Cấu hình Gốc (Root Configuration Protection)**: Các subagents (`ba`, `db-dev`, `backend-dev`, `frontend-dev`, `qa-tester`, `code-reviewer`, `planner`) **TUYỆT ĐỐI KHÔNG ĐƯỢC PHÉP TRỰC TIẾP CHỈNH SỬA** các file cấu hình gốc và manifest: `pyproject.toml`, `docker-compose.yml`, `alembic.ini`, `src/frontend/package.json`, `src/mobile/package.json`, `package-lock.json`. Khi cần thêm thư viện, subagent BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]` trong báo cáo gửi về Tech Lead. **DUY NHẤT Tech Lead Orchestrator** có thẩm quyền chỉnh sửa các file manifest này để triệt tiêu hoàn toàn rủi ro race condition trong `Workspace: "inherit"`.
 - 🚫 **Lệnh cài đặt trần trong Sandbox**: `pip install <pkg>` hoặc `npm install <pkg>` trần không có mạng.
 - 🚫 **Lệnh chạy không đúng Virtualenv**: Không gọi `pytest`, `ruff`, `python` trần của hệ điều hành ngoài virtualenv dự án. Luôn dùng virtualenv tương ứng (`.venv/bin/` trên Linux/macOS, `.\.venv\Scripts\` hoặc `python -m <module>` trên Windows).
 - 🚫 **Lệnh import font ngoại trú trong Sandbox**: Không dùng `next/font/google` fetch online gây nghẽn timeout; luôn dùng system fonts hoặc Tailwind CSS classes để build offline 100%.
-- 🚫 **Lệnh vi phạm phân vùng file (Path Boundary Violation)**: Subagent không bao giờ được phép sửa đổi hoặc xóa file nằm ngoài thư mục quyền sở hữu của mình (`src/db/` cho db-dev, `src/backend/` cho backend-dev, `src/frontend/` cho frontend-dev).
+- 🚫 **Lệnh vi phạm phân vùng file (Path Boundary Violation)**: Subagent không bao giờ được phép sửa đổi hoặc xóa file nằm ngoài thư mục quyền sở hữu của mình (`src/db/` cho db-dev, `src/backend/` cho backend-dev, `src/frontend/` và `src/mobile/` cho frontend-dev).
 
 ---
 
@@ -226,7 +234,7 @@ Khi nhận yêu cầu tính năng từ người dùng, Tech Lead áp dụng **Dy
 3. **Wave 1 (Triển khai song song `db-dev` & `frontend-dev`)**:
    - Gọi đồng thời `db-dev` (`Model: "inherit"`) và `frontend-dev` (`Model: "inherit"`) trong cùng một lệnh `invoke_subagent`.
    - `db-dev` tạo SQLAlchemy Models, Repositories, Migrations (qua `DIRECT_DATABASE_URL` port 5432 nếu dùng Supabase, hoặc `generate_offline_migration.py` nếu không có PostgreSQL) và Seeds trong `src/db/` (kế thừa `UUIDPrimaryKeyMixin`, mảng dùng `JSON`).
-   - `frontend-dev` tạo TypeScript types, Mock fixtures và UI components trong `src/frontend/` (hỗ trợ `isMockMode()` với cờ `NEXT_PUBLIC_USE_MOCKS=true` để phát triển và kiểm chứng UI độc lập).
+   - `frontend-dev` tạo TypeScript types, Mock fixtures và UI components trong `src/frontend/` (Next.js hoặc React Vite) và `src/mobile/` (React Native Expo nếu có yêu cầu Mobile) (hỗ trợ `isMockMode()` với cờ `NEXT_PUBLIC_USE_MOCKS=true` / `VITE_USE_MOCKS=true` / `EXPO_PUBLIC_USE_MOCKS=true` để phát triển và kiểm chứng UI độc lập).
 4. **Wave Handshake Gate, Cảnh Báo Lệch Schema Sớm & Tối Ưu Hóa Tiến Độ Pipelined**:
    - Khi `db-dev` hoàn tất Wave 1, bắt buộc gửi báo cáo bàn giao chuẩn hóa:
      ```text
@@ -375,7 +383,7 @@ Khi người dùng chỉ yêu cầu một tác vụ cục bộ đơn lẻ:
 - **"Thiết kế / Lập kế hoạch..."** $\to$ Chỉ gọi `planner` (`Model: "pro"`).
 - **"Tạo bảng / Migration / Tối ưu SQL..."** $\to$ Gọi `db-dev` (`Model: "inherit"`).
 - **"Viết API / Sửa logic FastAPI..."** $\to$ Gọi `backend-dev` (`Model: "inherit"`).
-- **"Làm giao diện / Component Next.js..."** $\to$ Gọi `frontend-dev` (`Model: "inherit"`).
+- **"Làm giao diện / Web Next.js / Vite / Mobile App React Native..."** $\to$ Gọi `frontend-dev` (`Model: "inherit"`).
 - **"Viết test / Chạy kiểm thử..."** $\to$ Gọi `qa-tester` (`Model: "flash"`).
 - **"Review code / Audit bảo mật..."** $\to$ Gọi `code-reviewer` (`Model: "pro"`).
 

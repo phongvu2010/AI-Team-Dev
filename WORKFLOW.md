@@ -26,9 +26,9 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
 │ - Đầu vào: docs/specs/<feature-slug>/prd.md                               │
 │ - Xuất bản: docs/specs/<feature-slug>/plan.md                             │
 │   ├── Metadata Header (YAML Frontmatter chuẩn hóa)                        │
-│   ├── Cross-Layer Data Contract Matrix (DB <-> Backend <-> Frontend)      │
+│   ├── Cross-Layer Data Contract Matrix (DB <-> Backend <-> Frontend/Mobile)│
 │   ├── REST API Contract (Casing chuẩn snake_case + Error Schemas)         │
-│   ├── UI Architecture (Next.js App Router 4 UI states tại src/frontend/)  │
+│   ├── UI Architecture (Next.js / Vite / React Native Expo 4 UI states)    │
 │   └── Acceptance Criteria Matrix (BAC/FR -> AC-ID -> TC-ID)               │
 └───────────────────────────────────┬───────────────────────────────────────┘
                                     │ [Quality Gate 1: Duyệt plan.md]
@@ -36,7 +36,7 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
 ┌───────────────────────────────────────────────────────────────────────────┐
 │ GIAI ĐOẠN 2: Thiết lập Rào Chắn Dòng Lệnh & Thư viện (Guardrails)         │
 │ - Áp dụng Role-based Command Whitelist & Blacklist nghiêm ngặt            │
-│ - Rà soát dependencies: pyproject.toml & src/frontend/package.json        │
+│ - Rà soát dependencies: pyproject.toml, package.json (Web & Mobile)       │
 │ - Quy chuẩn Sandbox: Cắm cờ [DEPENDENCY REQUIRED], không chạy lệnh trần   │
 │ - Smoke check Day-0: .venv/bin/ruff check src/ sạch sẽ                    │
 └───────────────────────────────────┬───────────────────────────────────────┘
@@ -46,12 +46,12 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
 │ GIAI ĐOẠN 3: Triển khai Lập trình Đợt kép (2-Wave Pipelined Execution)    │
 │                                                                           │
 │  ┌──────────────────────────────────┐   ┌──────────────────────────────┐  │
-│  │ Nhánh 1A: Database (`db-dev`)    │   │ Nhánh 1B: Frontend           │  │
+│  │ Nhánh 1A: Database (`db-dev`)    │   │ Nhánh 1B: Frontend & Mobile  │  │
 │  │ - src/db/models/<name>.py        │   │           (`frontend-dev`)   │  │
-│  │ - UUIDPrimaryKeyMixin, JSON array│   │ - TypeScript Types           │  │
-│  │ - Alembic & Async Seeds          │   │ - Mock data fixtures         │  │
-│  │ - Tránh N+1 (selectinload)       │   │ - UI 4 states (Loading,      │  │
-│  └────────────────┬─────────────────┘   │   Error, Empty, Success)     │  │
+│  │ - UUIDPrimaryKeyMixin, JSON array│   │ - Web: Next.js / React Vite  │  │
+│  │ - Alembic & Async Seeds          │   │ - Mobile: React Native Expo  │  │
+│  │ - Tránh N+1 (selectinload)       │   │ - TypeScript Types & Mocks   │  │
+│  └────────────────┬─────────────────┘   │ - UI 4 states (Load/Err/...) │  │
 │                   │ [Handshake Gate]    │   (Chạy song song gối đầu)   │  │
 │                   ▼                     │                              │  │
 │  ┌──────────────────────────────────┐   │                              │  │
@@ -71,7 +71,7 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
 │ - 2. Contract Sync: PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py
 │ - 3. DB & Backend Tests: PYTHONPATH=src .venv/bin/pytest -v               │
 │   (SQLite async in-memory fallback cô lập + Contract Verification Test)   │
-│ - 4. Frontend Typecheck: npm --prefix src/frontend run typecheck          │
+│ - 4. Client Typecheck: npm run typecheck (cả Web src/frontend/ & Mobile src/mobile/)│
 │ - Xuất bản: docs/specs/<feature-slug>/test-report.md                      │
 │                                                                           │
 │  ┌────────────────────────────────────────────────────────────────────┐   │
@@ -119,9 +119,9 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
 | **Business Analyst** | [`ba`](.agents/agents/ba.md) | `pro` (Phân tích nghiệp vụ sâu) | `docs/specs/<slug>/` | Phỏng vấn tối ưu 1-3 câu P0 (`ask_question`), chỉ đọc/ghi file (`view_file`, `write_to_file`, `replace_file_content`) | Cấm chạy shell commands, cấm sửa code hoặc file cấu hình gốc |
 | **Architect** | [`planner`](.agents/agents/planner.md) | `pro` (Reasoning sâu) | `docs/specs/<slug>/` | Chỉ đọc/ghi file tài liệu (`view_file`, `write_to_file`) | Cấm chạy shell commands, cấm sửa code hoặc file cấu hình gốc |
 | **DB Specialist** | [`db-dev`](.agents/agents/db-dev.md) | `inherit` | `src/db/` | `.venv/bin/ruff check src/db/`, `python3 -m py_compile`, `generate_offline_migration.py`, `alembic`, `runner.py` | Cấm `rm -rf`, `dropdb`, cấm sửa `pyproject.toml`, cấm `pip install`, ghi file ngoài `src/db/` |
-| **Frontend Dev** | [`frontend-dev`](.agents/agents/frontend-dev.md) | `inherit` / `flash` | `src/frontend/` | `npm --prefix src/frontend run typecheck`, `run lint`, `run build` (offline sandbox-safe) | Cấm `npm install` trần, cấm tự ý sửa `package.json`, cấm remote fonts, ghi file ngoài `src/frontend/` |
+| **Frontend & Mobile Dev** | [`frontend-dev`](.agents/agents/frontend-dev.md) | `inherit` / `flash` | `src/frontend/`, `src/mobile/` | Web: `npm --prefix src/frontend run typecheck`, `run lint`, `run build`; Mobile: `npm --prefix src/mobile run typecheck`, `run lint` | Cấm `npm install` trần, cấm tự ý sửa `package.json`, cấm remote fonts, ghi file ngoài `src/frontend/` và `src/mobile/` |
 | **Backend Dev** | [`backend-dev`](.agents/agents/backend-dev.md) | `inherit` | `src/backend/` | `.venv/bin/ruff check src/backend/`, `python3 -m py_compile` | Cấm `pip install` trần, cấm sửa `pyproject.toml`, ghi file ngoài `src/backend/` |
-| **QA Specialist** | [`qa-tester`](.agents/agents/qa-tester.md) | `flash` (Tiết kiệm 60% latency & token) | `docs/specs/`, `tests/` | `.venv/bin/ruff check src/`, `PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py`, `PYTHONPATH=src .venv/bin/pytest`, `run typecheck` | Cấm tự ý sửa code nghiệp vụ trong `src/` hoặc file manifest |
+| **QA Specialist** | [`qa-tester`](.agents/agents/qa-tester.md) | `flash` (Tiết kiệm 60% latency & token) | `docs/specs/`, `tests/` | `.venv/bin/ruff check src/`, `PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py`, `PYTHONPATH=src .venv/bin/pytest`, `npm run typecheck` (cả Web & Mobile), `python scripts/smoke_test.py` | Cấm tự ý sửa code nghiệp vụ trong `src/` hoặc file manifest |
 | **Code Reviewer** | [`code-reviewer`](.agents/agents/code-reviewer.md) | `pro` (Audit bảo mật OWASP) | `docs/specs/` | `git status --short`, `git diff --stat`, `git diff -- src/ docs/ ':!*package-lock.json' ':!*.lock'`, `git diff` | Cấm chạy lệnh sửa code, git commit hoặc đổi file cấu hình |
 
 ---
@@ -187,12 +187,22 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
     - Khi có PostgreSQL runtime local: `alembic revision --autogenerate -m "<slug>"`.
     - Khi trong Sandbox / không có DB live: `PYTHONPATH=src .venv/bin/python src/db/migrations/generate_offline_migration.py <slug>` để tự động tạo migration skeleton chuẩn có ID hợp lệ, sau đó điền `op.create_table()` và `op.drop_table()`.
   - Tạo kịch bản seed dữ liệu mẫu idempotent tại `src/db/seeds/<name>_seed.py`.
-- **Nhánh 1B - Frontend Specialist (`frontend-dev` tại `src/frontend/` — `Model: "inherit"`)**:
-  - Tạo TypeScript types tại `src/frontend/src/types/` khớp 100% với Data Contract Matrix (`snake_case`, 0 `any`).
-  - Tạo mock fixtures tại `src/frontend/src/lib/api/mocks/` hỗ trợ `isMockMode()` và cờ `NEXT_PUBLIC_USE_MOCKS=true`.
-  - Xây dựng UI components & pages Next.js Server Component-First xử lý trọn vẹn 4 trạng thái: Loading (loading.tsx), Error (error.tsx), Empty, Success.
-  - Tự động hóa phân giải API URL: `getApiBaseUrl()` (hỗ trợ SSR `INTERNAL_API_URL` và Client `NEXT_PUBLIC_API_URL`).
-  - Kiểm tra kiểu: `npm --prefix src/frontend run typecheck`.
+- **Nhánh 1B - Frontend & Mobile Specialist (`frontend-dev` tại `src/frontend/` & `src/mobile/` — `Model: "inherit"`)**:
+  - **Tùy chọn Khung làm việc (Framework Profiles)**:
+    - *Profile 1 - Web Next.js 15 (Mặc định)*: Server Component-First, App Router (`app/`), Tailwind CSS, SSR + Client Components.
+    - *Profile 2 - Web React Vite*: SPA Client-Side Rendering (`src/App.tsx`), Vite bundling siêu tốc, Tailwind CSS, Lucide icons.
+    - *Profile 3 - Mobile React Native*: Expo SDK 51/52, Expo Router (`app/`), NativeWind v4 (Tailwind CSS Mobile), SafeAreaProvider.
+    - *Công cụ chuyển đổi / kích hoạt*: `python scripts/setup_frontend.py` (`--status`, `--preset vite`, `--preset nextjs`, `--add-mobile`).
+  - Tạo TypeScript types tại `src/frontend/src/types/` (và `src/mobile/src/types/` nếu có mobile) khớp 100% với Data Contract Matrix (`snake_case`, 0 `any`).
+  - Tạo mock fixtures tại `mocks/` hỗ trợ `isMockMode()` và cờ `NEXT_PUBLIC_USE_MOCKS=true` (hoặc `VITE_USE_MOCKS=true`, `EXPO_PUBLIC_USE_MOCKS=true`).
+  - Xây dựng UI components & screens xử lý trọn vẹn **4 trạng thái UI**: `Loading`, `Error`, `Empty`, `Success`.
+  - **Universal Typed API Client**:
+    - Phân giải URL tự động qua `getApiBaseUrl()` (hỗ trợ SSR `INTERNAL_API_URL`, Browser Next.js `NEXT_PUBLIC_API_URL`, Vite `VITE_API_URL`, và Mobile Expo `EXPO_PUBLIC_API_URL`).
+    - Hỗ trợ Android emulator loopback: Tự động dùng `http://10.0.2.2:8000` thay cho `localhost` khi chạy trên Android.
+    - Dọn dẹp cache an toàn: `clearClientApiCache()` (chống crash khi `sessionStorage`/`localStorage` vắng mặt trên Mobile).
+  - Kiểm tra kiểu:
+    - Web: `npm --prefix src/frontend run typecheck`
+    - Mobile (nếu có): `npm --prefix src/mobile run typecheck`
 
 #### Wave Handshake Gate, Cảnh Báo Lệch Schema Sớm & Tối Ưu Hóa Tiến Độ Pipelined:
 1. **Báo cáo Bàn giao Chuẩn hóa từ `db-dev` (`[HANDSHAKE-HANDOVER]`)**:
@@ -276,6 +286,7 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
     .venv/bin/python scripts/verify_contracts.py <feature-slug>
     .venv/bin/pytest src/backend/tests -v
     npm --prefix src/frontend run typecheck
+    npm --prefix src/mobile run typecheck # (Nếu kích hoạt Mobile App)
     ```
   - **Windows (PowerShell / CMD)**:
     ```powershell
@@ -283,6 +294,7 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
     python scripts/verify_contracts.py <feature-slug>
     python -m pytest src/backend/tests -v
     npm --prefix src/frontend run typecheck
+    npm --prefix src/mobile run typecheck # (Nếu kích hoạt Mobile App)
     ```
 - Xuất báo cáo tại `docs/specs/<feature-slug>/test-report.md` (kèm Chỉ số Metrics và Structured Bug Tickets).
 - **Vòng lặp Self-Healing (Tự sửa lỗi) & Bảo Toàn Ngữ Cảnh (Context Preservation)**:

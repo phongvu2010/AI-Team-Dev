@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "AI Team Dev Mobile",
+    "slug": "ai-team-dev-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "aiteamdev",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0f172a"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

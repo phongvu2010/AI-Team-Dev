@@ -240,6 +240,27 @@ def main() -> int:
                 else:
                     print(f"       ✅ {name}: snake_case OK")
 
+    # 4. Verify Mobile TypeScript Types (src/mobile/src/types/) if present
+    mobile_types_dir = base_dir / "src" / "mobile" / "src" / "types"
+    if mobile_types_dir.exists():
+        print(f"\n[4] Checking Mobile App TypeScript Interfaces ({mobile_types_dir.relative_to(base_dir)}):")
+        mobile_types = extract_frontend_ts_fields(mobile_types_dir)
+        if not mobile_types:
+            print("    ℹ️ No mobile TypeScript interfaces found yet.")
+        else:
+            for iface_name, fields in mobile_types.items():
+                print(f"    📱 Mobile Interface: {iface_name}")
+                for f in fields:
+                    total_fields_checked += 1
+                    name = f["name"]
+                    if not is_snake_case(name):
+                        violations.append(
+                            f"❌ [Mobile {f['file']}] Property '{iface_name}.{name}' is not snake_case."
+                        )
+                        print(f"       ❌ {name}: NOT snake_case! (camelCase detected in {f['file']})")
+                    else:
+                        print(f"       ✅ {name}: snake_case OK")
+
     # Summary Output
     print("\n" + "=" * 75)
     print("📊 Contract Verification Summary:")

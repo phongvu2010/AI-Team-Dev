@@ -53,9 +53,12 @@ Trước khi bất kỳ dòng code tính năng nào được viết, bạn có t
 - Chuẩn hóa thông báo lỗi: `{"detail": "..."}` cho các mã `400`, `401`, `403`, `404`, `409`, `422`.
 - Cung cấp **Wave 1 Mock Fixtures** tại `src/frontend/src/lib/api/mocks/` để frontend phát triển độc lập.
 
-### 5. Thiết Kế UI Architecture (`src/frontend/` — `frontend-dev`):
-- Liệt kê các routes App Router, phân định rõ Server Component và Client Component (`"use client"`).
-- Quy chuẩn xử lý trọn vẹn **4 trạng thái UI**: `Loading` (skeleton), `Error` (alert + retry), `Empty` (CTA), `Success` (data display + A11y).
+### 5. Thiết Kế UI Architecture (`src/frontend/` & `src/mobile/` — `frontend-dev`):
+- Xác định rõ Framework Profile được chỉ định từ PRD:
+  - **Next.js 15 (App Router)**: Server vs Client Components (`"use client"`), dynamic routes, streaming suspense.
+  - **React Vite (SPA)**: Client components, Vite configuration, SPA routing.
+  - **React Native (Expo + NativeWind)**: Expo Router (`app/`), NativeWind (`className`), Safe Area, Touch handlers.
+- Quy chuẩn xử lý trọn vẹn **4 trạng thái UI**: `Loading` (skeleton/spinner), `Error` (alert + retry), `Empty` (CTA), `Success` (data display + A11y / Native responsive).
 
 ### 6. Thiết Lập Ma Trận Truy Xuất Yêu Cầu (Acceptance Criteria & Test Matrix):
 - Ánh xạ trực tiếp từ các tiêu chí nghiệm thu nghiệp vụ (`BAC-xx`) và yêu cầu chức năng (`FR-xx`) trong `prd.md` sang mã tiêu chí kỹ thuật (`AC-01`, `AC-02`) và mã test case tương ứng (`TC-01`, `TC-02`) cho QA.

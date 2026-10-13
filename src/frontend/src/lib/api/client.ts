@@ -5,27 +5,67 @@
  */
 
 /**
- * Dynamically resolves the API Base URL:
- * - Server-side (SSR / Server Actions): prioritizes INTERNAL_API_URL (e.g. Docker bridge or localhost:8000).
- * - Client-side (Browser): uses NEXT_PUBLIC_API_URL or defaults to http://localhost:8000.
+ * Cross-framework helper to read environment variables across Next.js, Vite, and React Native (Expo).
  */
-export function getApiBaseUrl(): string {
-  if (typeof window === "undefined") {
-    return (
-      process.env.INTERNAL_API_URL ??
-      process.env.NEXT_PUBLIC_API_URL ??
-      "http://127.0.0.1:8000"
-    );
+function getEnvVar(key: "API_URL" | "USE_MOCKS"): string | undefined {
+  // 1. Expo (React Native)
+  if (typeof process !== "undefined" && process.env) {
+    if (key === "API_URL" && process.env.EXPO_PUBLIC_API_URL) {
+      return process.env.EXPO_PUBLIC_API_URL;
+    }
+    if (key === "USE_MOCKS" && process.env.EXPO_PUBLIC_USE_MOCKS) {
+      return process.env.EXPO_PUBLIC_USE_MOCKS;
+    }
   }
-  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+  // 2. Vite (Browser SPA)
+  try {
+    // @ts-expect-error import.meta is available in Vite environments
+    if (typeof import.meta !== "undefined" && import.meta.env) {
+      // @ts-expect-error Vite env lookup
+      const viteVal = import.meta.env[`VITE_${key}`];
+      if (typeof viteVal === "string") return viteVal;
+    }
+  } catch {
+    // import.meta not available
+  }
+
+  // 3. Next.js / Node.js
+  if (typeof process !== "undefined" && process.env) {
+    if (key === "API_URL") {
+      return process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
+    }
+    if (key === "USE_MOCKS") {
+      return process.env.NEXT_PUBLIC_USE_MOCKS;
+    }
+  }
+
+  return undefined;
 }
 
 /**
- * Returns true if mock mode is explicitly enabled via NEXT_PUBLIC_USE_MOCKS=true.
+ * Dynamically resolves the API Base URL:
+ * - Next.js: uses INTERNAL_API_URL (SSR) or NEXT_PUBLIC_API_URL (Browser).
+ * - Vite: uses VITE_API_URL.
+ * - React Native (Expo): uses EXPO_PUBLIC_API_URL.
+ * - Fallback: http://localhost:8000
+ */
+export function getApiBaseUrl(): string {
+  const resolved = getEnvVar("API_URL");
+  if (resolved) return resolved;
+
+  if (typeof window === "undefined") {
+    return "http://127.0.0.1:8000";
+  }
+  return "http://localhost:8000";
+}
+
+/**
+ * Returns true if mock mode is explicitly enabled via USE_MOCKS=true (NEXT_PUBLIC / VITE / EXPO).
  * Defaults to false (Live Backend API mode).
  */
 export function isMockMode(): boolean {
-  return process.env.NEXT_PUBLIC_USE_MOCKS === "true";
+  return getEnvVar("USE_MOCKS") === "true";
 }
 
 export class ApiError extends Error {
@@ -63,7 +103,8 @@ export async function clearClientApiCache(): Promise<void> {
   if (typeof window !== "undefined") {
     try {
       // 1. Clear session and local storage keys associated with API responses
-      const clearStorage = (storage: Storage) => {
+      const clearStorage = (storage?: Storage) => {
+        if (!storage) return;
         const keysToRemove: string[] = [];
         for (let i = 0; i < storage.length; i++) {
           const key = storage.key(i);
@@ -74,8 +115,8 @@ export async function clearClientApiCache(): Promise<void> {
         keysToRemove.forEach((k) => storage.removeItem(k));
       };
 
-      clearStorage(sessionStorage);
-      clearStorage(localStorage);
+      if (typeof sessionStorage !== "undefined") clearStorage(sessionStorage);
+      if (typeof localStorage !== "undefined") clearStorage(localStorage);
 
       // 2. Clear Browser CacheStorage if supported
       if ("caches" in window) {

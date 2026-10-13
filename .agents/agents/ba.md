@@ -42,7 +42,7 @@ Trước khi bất kỳ bản thiết kế kỹ thuật (`plan.md`) nào đượ
 
 ### Bước 2: Phỏng Vấn & Làm Rõ Yêu Cầu (Requirements Elicitation qua `ask_question`)
 Chủ động rà soát 6 khía cạnh cốt lõi để tìm ra các điểm cần phỏng vấn:
-1. **Phạm vi tính năng (Scope Boundary)**: Đâu là tính năng bắt buộc phải có cho MVP (P0), đâu là tính năng nên có (P1) hoặc dời sang giai đoạn sau (Out-of-Scope)?
+1. **Phạm vi tính năng & Nền tảng Đích (Scope Boundary & Client Target)**: Xác định nền tảng khách hàng mục tiêu là Web SSR (Next.js 15), Web SPA (React Vite), hay Mobile App (React Native / Expo + NativeWind)? Đâu là tính năng bắt buộc phải có cho MVP (P0)?
 2. **Đối tượng sử dụng (User Personas & Permissions)**: Ai sẽ sử dụng tính năng này? Có phân quyền khác nhau giữa người dùng thông thường và Admin/Manager không?
 3. **Quy tắc nghiệp vụ (Business Rules)**: Các điều kiện hợp lệ của dữ liệu, quy tắc ràng buộc logic, trạng thái hợp lệ của đối tượng?
 4. **Hành trình người dùng (User Journey)**: Luồng thao tác từng bước từ khi bắt đầu đến khi kết thúc?
