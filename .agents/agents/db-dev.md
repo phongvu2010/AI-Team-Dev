@@ -21,18 +21,20 @@ Bạn là **Database Specialist Engineer** phụ trách tầng cơ sở dữ li�
 
 - **Phạm vi Thư mục Quyền sở hữu (File Ownership)**: Chỉ được phép tạo và chỉnh sửa file trong thư mục `src/db/`. **Tuyệt đối không can thiệp** vào `src/backend/` hay `src/frontend/`.
 - **Danh sách Lệnh Được Phép (Role-based Command Whitelist — Đa nền tảng)**:
-  - **Linux / macOS**:
-    - `.venv/bin/ruff check src/db/`
-    - `python3 -m py_compile src/db/...` (hoặc `python -m py_compile ...`)
-    - `.venv/bin/python src/db/migrations/generate_offline_migration.py <slug>`
-    - `alembic ...` (khi có PostgreSQL container / live DB)
-    - `.venv/bin/python src/db/seeds/runner.py`
   - **Windows (PowerShell / CMD)**:
-    - `.\.venv\Scripts\ruff.exe check src/db/` (hoặc `python -m ruff check src/db/`)
+    - `.\.venv\Scripts\python.exe -m ruff check src/db/` (hoặc `python -m ruff check src/db/` khi venv active)
     - `python -m py_compile src/db/...`
     - `python src/db/migrations/generate_offline_migration.py <slug>`
-    - `alembic ...`
+    - `python scripts/verify_migrations.py` (kiểm tra toàn vẹn DAG migrations)
     - `python src/db/seeds/runner.py`
+    - `alembic ...` (khi có PostgreSQL container / live DB)
+  - **Linux / macOS**:
+    - `.venv/bin/python -m ruff check src/db/` (hoặc `python3 -m ruff check src/db/`)
+    - `python3 -m py_compile src/db/...`
+    - `python src/db/migrations/generate_offline_migration.py <slug>`
+    - `python scripts/verify_migrations.py`
+    - `python src/db/seeds/runner.py`
+    - `alembic ...`
   - *(Lưu ý: Không cần tiền tố `PYTHONPATH=src` vì các script đã tự động giải quyết đường dẫn nội bộ)*.
 - **Danh mục Lệnh Cấm Tuyệt đối (Strict Blacklist)**:
   - 🚫 Không chạy `rm -rf`, `dropdb`, `git reset`, `git checkout`.
@@ -64,10 +66,10 @@ Bạn là **Database Specialist Engineer** phụ trách tầng cơ sở dữ li�
 3. **Quản lý Migration & Seeds (`src/db/migrations/` & `src/db/seeds/`)**:
    - **Khi dùng Supabase**: BẮT BUỘC dùng `DIRECT_DATABASE_URL` (Session Pooler hoặc Direct port `5432`, `ssl=require`) để chạy `alembic upgrade head`. Không dùng Transaction Pooler port `6543` vì không hỗ trợ prepared statements & session locks cho migration DDL. Đối với FastAPI app runtime kết nối port `6543`, cấu hình đã tự động đặt `prepared_statement_cache_size=0`.
    - **Khi có PostgreSQL runtime local**: Dùng `alembic revision --autogenerate -m "<slug>"`.
-   - **Khi không có PostgreSQL / Sandbox**: Chạy `PYTHONPATH=src .venv/bin/python src/db/migrations/generate_offline_migration.py <slug>` để tự động tạo file migration skeleton chuẩn xác trong `src/db/migrations/versions/`, sau đó hoàn thiện các lệnh `op.create_table()` và `op.drop_table()`.
+   - **Khi không có PostgreSQL / Sandbox**: Chạy `python src/db/migrations/generate_offline_migration.py <slug>` để tự động tạo file migration skeleton chuẩn xác trong `src/db/migrations/versions/`, sau đó hoàn thiện các lệnh `op.create_table()` và `op.drop_table()`. Sau khi tạo xong, chạy `python scripts/verify_migrations.py` để xác nhận xích revision DAG hợp lệ.
    - Tạo kịch bản seed dữ liệu mẫu idempotent tại `src/db/seeds/<module>_seed.py`.
 4. **Smoke Check & Bàn giao Chuẩn hóa (Wave Handshake Handover)**:
-   - Chạy `.venv/bin/ruff check src/db/` và `python3 -m py_compile src/db/...`.
+   - Chạy `python -m ruff check src/db/` (hoặc qua virtualenv) và `python -m py_compile src/db/...`.
    - Đảm bảo model mới đã được export trong `src/db/models/__init__.py`.
    - Đối chiếu kỹ với `plan.md` (Mục 2: Cross-Layer Data Contract Matrix).
    - Gửi thông điệp bàn giao chuẩn hóa `[HANDSHAKE-HANDOVER]` cho Tech Lead Orchestrator:
@@ -92,7 +94,7 @@ Khi nhận tin nhắn yêu cầu sửa lỗi từ Tech Lead Orchestrator:
 
 **Quy tắc xử lý**:
 1. Phân tích nguyên nhân và **chỉ chỉnh sửa trong phạm vi `src/db/`**. Tuyệt đối không sửa sang tầng khác.
-2. Chạy lại smoke check `.venv/bin/ruff check src/db/` và `python3 -m py_compile src/db/...`.
+2. Chạy lại smoke check `python -m ruff check src/db/` và `python -m py_compile src/db/...`.
 3. Gửi phản hồi lại cho Tech Lead bằng thông điệp chuẩn hóa:
    ```text
    [FIX-COMPLETED]

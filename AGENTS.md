@@ -130,21 +130,21 @@ Mỗi tác tử chỉ được phép thực thi các lệnh trong danh mục whi
   - Chỉ sử dụng công cụ đọc/ghi tài liệu: `view_file`, `write_to_file`, `replace_file_content`.
   - Không thực thi lệnh shell làm thay đổi mã nguồn.
 - **`db-dev`** (Chỉ thao tác trong `src/db/`):
-  - *Linux / macOS*: `.venv/bin/ruff check src/db/`, `.venv/bin/python src/db/migrations/generate_offline_migration.py <slug>`, `.venv/bin/python src/db/seeds/runner.py`
-  - *Windows*: `python -m ruff check src/db/`, `python src/db/migrations/generate_offline_migration.py <slug>`, `python src/db/seeds/runner.py`
-  - *Đa nền tảng*: `python -m py_compile src/db/...`, `alembic ...` (với PostgreSQL Docker local hoặc Supabase qua `DIRECT_DATABASE_URL` port 5432)
+  - *Windows*: `.\.venv\Scripts\python.exe -m ruff check src/db/` (hoặc `python -m ruff check src/db/`), `python src/db/migrations/generate_offline_migration.py <slug>`, `python scripts/verify_migrations.py`, `python src/db/seeds/runner.py`, `alembic ...`
+  - *Linux / macOS*: `.venv/bin/python -m ruff check src/db/`, `python src/db/migrations/generate_offline_migration.py <slug>`, `python scripts/verify_migrations.py`, `python src/db/seeds/runner.py`, `alembic ...`
+  - *Đa nền tảng*: `python -m py_compile src/db/...`
 - **`backend-dev`** (Chỉ thao tác trong `src/backend/`):
-  - *Linux / macOS*: `.venv/bin/ruff check src/backend/`
-  - *Windows*: `python -m ruff check src/backend/`
-  - *Đa nền tảng*: `python -m py_compile src/backend/...`
+  - *Windows*: `.\.venv\Scripts\python.exe -m ruff check src/backend/` (hoặc `python -m ruff check src/backend/`), `python -m py_compile src/backend/...`
+  - *Linux / macOS*: `.venv/bin/python -m ruff check src/backend/`, `python3 -m py_compile src/backend/...`
 - **`frontend-dev`** (Thao tác trong `src/frontend/` và `src/mobile/`):
   - *Web*: `npm --prefix src/frontend run typecheck`, `npm --prefix src/frontend run lint`, `npm --prefix src/frontend run build` (tích hợp `NEXT_TELEMETRY_DISABLED=1` chạy offline chuẩn sandbox)
   - *Mobile (khi có `src/mobile/`)*: `npm --prefix src/mobile run typecheck`, `npm --prefix src/mobile run lint`
 - **`qa-tester`** (Thao tác kiểm tra toàn diện):
-  - *Chạy 1-Click Tự động (Đa nền tảng)*: `python scripts/smoke_test.py` (tự động phát hiện cả Web & Mobile)
-  - *Linux / macOS*: `.venv/bin/ruff check src/`, `.venv/bin/python scripts/verify_contracts.py <feature-slug>`, `.venv/bin/pytest src/backend/tests -v`
-  - *Windows*: `python -m ruff check src/`, `python scripts/verify_contracts.py <feature-slug>`, `python -m pytest src/backend/tests -v`
+  - *Chạy 1-Click Tự động (Khuyên dùng trên mọi HĐH)*: `python scripts/smoke_test.py` (tự động phát hiện venv, chạy 5 tầng kiểm tra)
+  - *Windows*: `.\.venv\Scripts\python.exe -m ruff check src/`, `python scripts/verify_contracts.py <feature-slug>`, `python scripts/verify_migrations.py`, `.\.venv\Scripts\python.exe -m pytest src/backend/tests src/db/tests -v`, `npm --prefix src/frontend run typecheck`
+  - *Linux / macOS*: `.venv/bin/python -m ruff check src/`, `python scripts/verify_contracts.py <feature-slug>`, `python scripts/verify_migrations.py`, `.venv/bin/python -m pytest src/backend/tests src/db/tests -v`, `npm --prefix src/frontend run typecheck`
   - *Client Typecheck*: `npm --prefix src/frontend run typecheck`, `npm --prefix src/mobile run typecheck` (khi có `src/mobile/`)
+  - *Kiểm tra Server Visual Test*: `python scripts/start_dev.py --check`
 - **`code-reviewer`** (Chỉ thao tác thẩm định read-only):
   - `git status --short`
   - `git diff --stat`
@@ -153,7 +153,9 @@ Mỗi tác tử chỉ được phép thực thi các lệnh trong danh mục whi
 - **`tech-lead` (Orchestrator)**:
   - `python -m py_compile src/db/models/*.py` (Wave Handshake Gate)
   - `python scripts/verify_contracts.py <feature-slug>`
+  - `python scripts/verify_migrations.py`
   - `python scripts/smoke_test.py`
+  - `python scripts/start_dev.py` (khởi động server kiểm thử trực quan)
   - Cập nhật các file manifest gốc (`pyproject.toml`, `docker-compose.yml`, `alembic.ini`, `src/frontend/package.json`, `src/mobile/package.json`) khi nhận cờ `[DEPENDENCY REQUIRED]`.
   - Quản lý vòng đời và dọn dẹp subagents qua `manage_subagents` (`Action: "kill"` / `"kill_all"`).
   - `git status`, `git add`, `git commit` đóng gói tính năng.
@@ -284,14 +286,16 @@ Khi nhận yêu cầu tính năng từ người dùng, Tech Lead áp dụng **Dy
 ### Bước 3: Giai đoạn Testing & Vòng Lặp Self-Healing (`qa-tester` — `Model: "flash"`)
 1. Gọi `invoke_subagent` với `TypeName: "qa-tester"`, `Model: "flash"`.
    *(Dùng Model Flash giúp chạy lệnh CLI nhanh gấp đôi và tiết kiệm 60% token budget)*.
-2. `qa-tester` thực thi kiểm tra 4 tầng theo thứ tự:
-   - `.venv/bin/ruff check src/`
-   - `PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py <feature-slug>` (Tự động quét schema & model casing snake_case, chống lệch hợp đồng giữa Pydantic và TypeScript)
-   - `PYTHONPATH=src ./.venv/bin/pytest src/backend/tests -v`
-   - `npm --prefix src/frontend run typecheck`
-3. **Kiểm thử Trực quan Giao diện & 4 Trạng Thái UI (Visual Verification qua `/browser`)**:
-   - Đối với các tính năng có giao diện Frontend (`src/frontend/` hoặc `src/mobile/`), `qa-tester` thẩm định đầy đủ 4 trạng thái giao diện: *Loading (Skeleton), Empty (Placeholder + CTA), Error (Alert + Retry), Success (Data render chuẩn)* và kiểm tra tính tương thích Responsive trên Desktop (1280px) & Mobile (375px).
-   - Tech Lead hoặc QA Tester hướng dẫn / kích hoạt lệnh `/browser http://localhost:3000/<route>` (hoặc port tương ứng) để duyệt trực tiếp giao diện, chụp ảnh màn hình và ghi nhận kết quả vào **Mục 2.2 của `docs/specs/<feature-slug>/test-report.md`**.
+2. `qa-tester` thực thi kiểm tra 5 tầng toàn diện (khuyên dùng `python scripts/smoke_test.py` chạy 1-click tự động):
+   - Python Linting: `python -m ruff check src/`
+   - Cross-Layer Contract Verification: `python scripts/verify_contracts.py <feature-slug>`
+   - Migration DAG & Syntax Integrity: `python scripts/verify_migrations.py`
+   - Automated Tests (DB & Backend): `python -m pytest src/backend/tests src/db/tests -v`
+   - Frontend Typecheck: `npm --prefix src/frontend run typecheck`
+3. **Khởi Động Server & Kiểm thử Trực quan Giao diện 4 Trạng Thái UI (Visual Verification qua `/browser`)**:
+   - Đối với các tính năng có giao diện Frontend (`src/frontend/` hoặc `src/mobile/`), QA Tester kiểm định trực quan 4 trạng thái giao diện: *Loading (Skeleton), Empty (Placeholder + CTA), Error (Alert + Retry), Success (Data render chuẩn)* và tính tương thích Responsive trên Desktop (1280px) & Mobile (375px).
+   - Khởi động dev server bằng lệnh: `python scripts/start_dev.py` (hoặc kiểm tra cổng qua `python scripts/start_dev.py --check`).
+   - Kích hoạt hoặc hướng dẫn User kích hoạt lệnh `/browser http://localhost:3000/<route>` trên chat để duyệt trực tiếp giao diện, chụp ảnh màn hình và ghi nhận kết quả vào **Mục 2.2 của `docs/specs/<feature-slug>/test-report.md`**.
 4. Xuất kết quả vào `docs/specs/<feature-slug>/test-report.md`.
 5. **Vòng lặp Tự sửa lỗi (Self-Healing Bug Fix Loop) & Bảo Toàn Ngữ Cảnh (Context Preservation)**:
    - Nếu `overall_status: FAILED`:
@@ -417,7 +421,7 @@ Là **Tech Lead Orchestrator**, bạn không thể tự thực thi Slash Command
    - *Mẫu câu gợi ý*: `"Bạn có thể dùng lệnh /learn để hệ thống lưu quy chuẩn cấu hình này vào bộ nhớ dài hạn của Workspace cho các phiên làm việc sau."`
 7. **Khuyến nghị `/browser` (Visual Testing & UI Verification)**:
    - *Bối cảnh*: Khi đội ngũ hoàn thành code giao diện Web/Mobile (`src/frontend/`), cần kiểm tra trực quan 4 trạng thái giao diện (Loading skeleton, Empty state, Error retry banner, Success render) và độ co giãn Responsive (Desktop 1280px vs Mobile 375px) trên trình duyệt thực tế.
-   - *Mẫu câu gợi ý*: `"Giao diện Web đã hoàn thành. Bạn có thể sử dụng lệnh /browser http://localhost:3000/<route> để mở trình duyệt kiểm tra trực tiếp 4 trạng thái UI, độ mượt của Tailwind CSS và tính tương thích responsive trên di động nhé."`
+   - *Mẫu câu gợi ý*: `"Giao diện Web đã hoàn thành. Hãy chạy 'python scripts/start_dev.py' để khởi động server (nếu chưa chạy), sau đó bạn có thể sử dụng lệnh /browser http://localhost:3000/<route> để mở trình duyệt kiểm tra trực tiếp 4 trạng thái UI, độ mượt của Tailwind CSS và tính tương thích responsive trên di động nhé."`
 8. **Khuyến nghị `/schedule`**:
    - *Bối cảnh*: Khi người dùng muốn đặt lịch chạy kiểm thử hoặc cron task định kỳ.
 

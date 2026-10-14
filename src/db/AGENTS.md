@@ -7,8 +7,8 @@ Quy tắc bắt buộc khi bất kỳ Agent nào (`db-dev`, `qa-tester`, `code-r
 ## 1. Rào Chắn An Toàn Dòng Lệnh & Phân Quyền (CLI Guardrails)
 - **Quyền sở hữu File**: Tác tử `db-dev` chỉ được tạo và chỉnh sửa file trong `src/db/`. Tuyệt đối không can thiệp vào `src/backend/` hay `src/frontend/`.
 - **Lệnh được phép (Đa nền tảng)**:
-  - *Linux / macOS*: `.venv/bin/ruff check src/db/`, `.venv/bin/python src/db/seeds/runner.py`, `.venv/bin/python src/db/migrations/generate_offline_migration.py <slug>`, `alembic ...`
-  - *Windows*: `python -m ruff check src/db/`, `python src/db/seeds/runner.py`, `python src/db/migrations/generate_offline_migration.py <slug>`, `alembic ...`
+  - *Windows*: `.\.venv\Scripts\python.exe -m ruff check src/db/` (hoặc `python -m ruff check src/db/`), `python src/db/seeds/runner.py`, `python src/db/migrations/generate_offline_migration.py <slug>`, `python scripts/verify_migrations.py`, `alembic ...`
+  - *Linux / macOS*: `.venv/bin/python -m ruff check src/db/`, `python src/db/seeds/runner.py`, `python src/db/migrations/generate_offline_migration.py <slug>`, `python scripts/verify_migrations.py`, `alembic ...`
   - *Cú pháp chung*: `python -m py_compile src/db/...`
 - **Lệnh cấm tuyệt đối**:
   - Cấm `rm -rf`, `dropdb`, `git reset`, `git checkout`.
@@ -41,8 +41,8 @@ Quy tắc bắt buộc khi bất kỳ Agent nào (`db-dev`, `qa-tester`, `code-r
   - SQLite in-memory test (`:memory:`) được sinh bảng tự động qua `Base.metadata.create_all` trong `conftest.py`. Không áp dụng Alembic cho SQLite in-memory test.
   - Khi dùng Supabase: BẮT BUỘC dùng `DIRECT_DATABASE_URL` (Session Pooler hoặc Direct port `5432`, `ssl=require`) để chạy `alembic upgrade head`. Không dùng Transaction Pooler port `6543` vì không hỗ trợ prepared statements & session locks cho migration DDL.
   - Khi có PostgreSQL runtime local: Dùng `alembic upgrade head` (`docker compose up -d postgres`).
-  - Trong sandbox / môi trường không có PostgreSQL: Chạy `PYTHONPATH=src .venv/bin/python src/db/migrations/generate_offline_migration.py <slug>` để tự động sinh file migration chuẩn xác (kèm ID revision hợp lệ) trong `src/db/migrations/versions/`, sau đó hoàn thiện logic `upgrade()` và `downgrade()`.
-- **Seed Data**: Đặt tại `src/db/seeds/<module>_seed.py`, đảm bảo tính idempotent (kiểm tra tồn tại trước khi add). Chạy qua `PYTHONPATH=src .venv/bin/python src/db/seeds/runner.py`.
+  - Trong sandbox / môi trường không có PostgreSQL: Chạy `python src/db/migrations/generate_offline_migration.py <slug>` để tự động sinh file migration chuẩn xác (kèm ID revision hợp lệ) trong `src/db/migrations/versions/`, sau đó hoàn thiện logic `upgrade()` và `downgrade()`. Xác nhận tính toàn vẹn bằng `python scripts/verify_migrations.py`.
+- **Seed Data**: Đặt tại `src/db/seeds/<module>_seed.py`, đảm bảo tính idempotent (kiểm tra tồn tại trước khi add). Chạy qua `python src/db/seeds/runner.py`.
 - **Bàn giao Wave Handshake (`[HANDSHAKE-HANDOVER]`)**: Khi hoàn thành models, migrations và seeds, `db-dev` gửi thông điệp chuẩn hóa kèm cờ `Contract Modified: TRUE/FALSE` và chi tiết thay đổi để Tech Lead thẩm định tại Handshake Gate trước khi kích hoạt Wave 2.
 
 ---
@@ -50,7 +50,7 @@ Quy tắc bắt buộc khi bất kỳ Agent nào (`db-dev`, `qa-tester`, `code-r
 ## 4. Tham Gia Vòng Lặp Sửa Lỗi (Feedback Loop Protocol)
 Khi nhận tin nhắn điều phối `[SELF-HEALING ACTION REQUIRED]` từ QA hoặc `[REVIEW-FIX ACTION REQUIRED]` từ Reviewer:
 1. Phân tích nguyên nhân và **chỉ chỉnh sửa trong phạm vi `src/db/`**.
-2. Kiểm tra smoke check: `.venv/bin/ruff check src/db/` và `python3 -m py_compile src/db/...`.
+2. Kiểm tra smoke check: `python -m ruff check src/db/` và `python -m py_compile src/db/...`.
 3. Gửi thông điệp phản hồi `[FIX-COMPLETED]` cho Tech Lead Orchestrator:
    ```text
    [FIX-COMPLETED]

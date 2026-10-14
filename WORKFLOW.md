@@ -67,11 +67,12 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
                                      ▼
 ┌───────────────────────────────────────────────────────────────────────────┐
 │ GIAI ĐOẠN 4: Kiểm thử Tự động & Vòng lặp Sửa lỗi (`qa-tester`)            │
-│ - 1. Linter: .venv/bin/ruff check src/                                    │
-│ - 2. Contract Sync: PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py
-│ - 3. DB & Backend Tests: PYTHONPATH=src .venv/bin/pytest -v               │
-│   (SQLite async in-memory fallback cô lập + Contract Verification Test)   │
-│ - 4. Client Typecheck: npm run typecheck (cả Web src/frontend/ & Mobile src/mobile/)│
+│ - 1. Linter: python -m ruff check src/                                    │
+│ - 2. Contract Sync: python scripts/verify_contracts.py <feature-slug>     │
+│ - 3. Migration DAG: python scripts/verify_migrations.py                   │
+│ - 4. DB & Backend Tests: python -m pytest src/backend/tests src/db/tests  │
+│   (SQLite async in-memory fallback cô lập + Migration DAG integrity)      │
+│ - 5. Client Typecheck: npm run typecheck (cả Web src/frontend/ & Mobile)  │
 │ - Xuất bản: docs/specs/<feature-slug>/test-report.md                      │
 │                                                                           │
 │  ┌────────────────────────────────────────────────────────────────────┐   │
@@ -115,13 +116,13 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
 | Vai trò / Tác tử | Nhận diện Subagent | Antigravity Model | Thư mục sở hữu (Ownership) | Lệnh được phép (Whitelist) | Lệnh cấm (Blacklist) |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Product Owner** | User (Con người) | - | Toàn dự án | Mọi lệnh hệ thống | - |
-| **Tech Lead** | Antigravity Main Agent | `inherit` | Toàn dự án | Điều phối subagents, `manage_subagents` (dọn dẹp), độc quyền cập nhật manifest (`pyproject.toml`, `package.json`), `python3 -m py_compile src/db/models/*.py` (Wave Gate), `PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py`, `git status`, `git add`, `git commit` | Cấm `git reset --hard`, `git push --force` |
+| **Tech Lead** | Antigravity Main Agent | `inherit` | Toàn dự án | Điều phối subagents, `manage_subagents` (dọn dẹp), độc quyền cập nhật manifest (`pyproject.toml`, `package.json`), `python -m py_compile src/db/models/*.py` (Wave Gate), `python scripts/verify_contracts.py`, `python scripts/verify_migrations.py`, `python scripts/start_dev.py`, `python scripts/smoke_test.py`, `git status`, `git add`, `git commit` | Cấm `git reset --hard`, `git push --force` |
 | **Business Analyst** | [`ba`](.agents/agents/ba.md) | `pro` (Phân tích nghiệp vụ sâu) | `docs/specs/<slug>/` | Phỏng vấn tối ưu 1-3 câu P0 (`ask_question`), chỉ đọc/ghi file (`view_file`, `write_to_file`, `replace_file_content`) | Cấm chạy shell commands, cấm sửa code hoặc file cấu hình gốc |
 | **Architect** | [`planner`](.agents/agents/planner.md) | `pro` (Reasoning sâu) | `docs/specs/<slug>/` | Chỉ đọc/ghi file tài liệu (`view_file`, `write_to_file`) | Cấm chạy shell commands, cấm sửa code hoặc file cấu hình gốc |
-| **DB Specialist** | [`db-dev`](.agents/agents/db-dev.md) | `inherit` | `src/db/` | `.venv/bin/ruff check src/db/`, `python3 -m py_compile`, `generate_offline_migration.py`, `alembic`, `runner.py` | Cấm `rm -rf`, `dropdb`, cấm sửa `pyproject.toml`, cấm `pip install`, ghi file ngoài `src/db/` |
+| **DB Specialist** | [`db-dev`](.agents/agents/db-dev.md) | `inherit` | `src/db/` | `python -m ruff check src/db/`, `python -m py_compile src/db/...`, `generate_offline_migration.py`, `verify_migrations.py`, `runner.py`, `alembic` | Cấm `rm -rf`, `dropdb`, cấm sửa `pyproject.toml`, cấm `pip install`, ghi file ngoài `src/db/` |
 | **Frontend & Mobile Dev** | [`frontend-dev`](.agents/agents/frontend-dev.md) | `inherit` / `flash` | `src/frontend/`, `src/mobile/` | Web: `npm --prefix src/frontend run typecheck`, `run lint`, `run build`; Mobile: `npm --prefix src/mobile run typecheck`, `run lint` | Cấm `npm install` trần, cấm tự ý sửa `package.json`, cấm remote fonts, ghi file ngoài `src/frontend/` và `src/mobile/` |
-| **Backend Dev** | [`backend-dev`](.agents/agents/backend-dev.md) | `inherit` | `src/backend/` | `.venv/bin/ruff check src/backend/`, `python3 -m py_compile` | Cấm `pip install` trần, cấm sửa `pyproject.toml`, ghi file ngoài `src/backend/` |
-| **QA Specialist** | [`qa-tester`](.agents/agents/qa-tester.md) | `flash` (Tiết kiệm 60% latency & token) | `docs/specs/`, `tests/` | `.venv/bin/ruff check src/`, `PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py`, `PYTHONPATH=src .venv/bin/pytest`, `npm run typecheck` (cả Web & Mobile), `python scripts/smoke_test.py` | Cấm tự ý sửa code nghiệp vụ trong `src/` hoặc file manifest |
+| **Backend Dev** | [`backend-dev`](.agents/agents/backend-dev.md) | `inherit` | `src/backend/` | `python -m ruff check src/backend/`, `python -m py_compile src/backend/...` | Cấm `pip install` trần, cấm sửa `pyproject.toml`, ghi file ngoài `src/backend/` |
+| **QA Specialist** | [`qa-tester`](.agents/agents/qa-tester.md) | `flash` (Tiết kiệm 60% latency & token) | `docs/specs/`, `tests/` | 1-Click `python scripts/smoke_test.py`, `python -m ruff check src/`, `python scripts/verify_contracts.py`, `python scripts/verify_migrations.py`, `python -m pytest src/backend/tests src/db/tests`, `npm run typecheck` | Cấm tự ý sửa code nghiệp vụ trong `src/` hoặc file manifest |
 | **Code Reviewer** | [`code-reviewer`](.agents/agents/code-reviewer.md) | `pro` (Audit bảo mật OWASP) | `docs/specs/` | `git status --short`, `git diff --stat`, `git diff -- src/ docs/ ':!*package-lock.json' ':!*.lock'`, `git diff` | Cấm chạy lệnh sửa code, git commit hoặc đổi file cấu hình |
 
 ---
@@ -281,34 +282,41 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
 - **Quy Chuẩn Kiểm Thử Kiểu Dữ Liệu PostgreSQL Nâng Cao (Cross-DB Testing)**:
   - Khi test các tính năng đặc thù PostgreSQL (`pgvector`, `tsvector`, native enum, array operators), gắn decorator `@pytest.mark.postgres_only`.
   - SQLite in-memory test mặc định sẽ tự động skip an toàn các test này mà không báo `FAILED`.
-  - Khi có PostgreSQL: `TEST_DATABASE_URL=postgresql+asyncpg://... PYTHONPATH=src .venv/bin/pytest src/backend/tests -v`.
-- Thực thi chuỗi lệnh kiểm tra (4 tầng toàn diện — Đa nền tảng):
+  - Khi có PostgreSQL: `TEST_DATABASE_URL=postgresql+asyncpg://... python -m pytest src/backend/tests src/db/tests -v`.
+- Thực thi chuỗi lệnh kiểm tra (5 tầng toàn diện — Đa nền tảng):
   - **Khuyên dùng (1-Click Tự động trên mọi HĐH)**:
     ```bash
     python scripts/smoke_test.py
     ```
-  - **Linux / macOS**:
-    ```bash
-    .venv/bin/ruff check src/
-    .venv/bin/python scripts/verify_contracts.py <feature-slug>
-    .venv/bin/pytest src/backend/tests -v
-    npm --prefix src/frontend run typecheck
-    npm --prefix src/mobile run typecheck # (Nếu kích hoạt Mobile App)
-    ```
   - **Windows (PowerShell / CMD)**:
     ```powershell
-    python -m ruff check src/
+    .\.venv\Scripts\python.exe -m ruff check src/
     python scripts/verify_contracts.py <feature-slug>
-    python -m pytest src/backend/tests -v
+    python scripts/verify_migrations.py
+    .\.venv\Scripts\python.exe -m pytest src/backend/tests src/db/tests -v
     npm --prefix src/frontend run typecheck
     npm --prefix src/mobile run typecheck # (Nếu kích hoạt Mobile App)
     ```
-- **Kiểm Thử Trực Quan Giao Diện & 4 Trạng Thái UI (Visual Verification qua `/browser`)**:
-  - Đối với các tính năng có giao diện Web hoặc Mobile (`src/frontend/` hoặc `src/mobile/`), `qa-tester` kết hợp kiểm tra typecheck với việc thẩm định trực quan đủ 4 trạng thái UI:
+  - **Linux / macOS**:
+    ```bash
+    .venv/bin/python -m ruff check src/
+    python scripts/verify_contracts.py <feature-slug>
+    python scripts/verify_migrations.py
+    .venv/bin/python -m pytest src/backend/tests src/db/tests -v
+    npm --prefix src/frontend run typecheck
+    npm --prefix src/mobile run typecheck # (Nếu kích hoạt Mobile App)
+    ```
+- **Khởi Động Server & Kiểm Thử Trực Quan Giao Diện 4 Trạng Thái UI (Visual Verification qua `/browser`)**:
+  - Đối với các tính năng có giao diện Web hoặc Mobile (`src/frontend/` hoặc `src/mobile/`), QA Tester kết hợp kiểm tra typecheck với việc thẩm định trực quan đủ 4 trạng thái UI:
     1. *Loading State*: Skeleton loader / Spinner hiển thị chống layout shift (CLS).
     2. *Empty State*: Thông điệp thân thiện + Nút kêu gọi hành động (CTA) khi dữ liệu rỗng.
     3. *Error State*: Banner cảnh báo đỏ + Nút "Thử lại" (Retry) khi API lỗi.
     4. *Success State*: Dữ liệu hiển thị chuẩn xác, bố cục responsive Desktop (1280px) & Mobile (375px).
+  - Khởi động dev server bằng lệnh:
+    ```bash
+    python scripts/start_dev.py           # Chạy song song FastAPI & Frontend
+    # hoặc kiểm tra trạng thái cổng: python scripts/start_dev.py --check
+    ```
   - Khuyến nghị kích hoạt phím tắt `/browser http://localhost:3000/<route>` trên chat Antigravity 2.0 để tương tác trực quan, chụp ảnh màn hình và đối chiếu AC.
 - Xuất báo cáo tại `docs/specs/<feature-slug>/test-report.md` (kèm Chỉ số Metrics, Bảng Kiểm Định Trực Quan Mục 2.2 và Structured Bug Tickets).
 - **Vòng lặp Self-Healing (Tự sửa lỗi) & Bảo Toàn Ngữ Cảnh (Context Preservation)**:

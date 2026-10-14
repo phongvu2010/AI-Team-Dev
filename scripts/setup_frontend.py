@@ -14,7 +14,6 @@ Usage:
 """
 
 import argparse
-import os
 import shutil
 import sys
 from pathlib import Path
@@ -55,18 +54,18 @@ def print_status() -> None:
     print("=" * 65)
 
     web_fw = get_current_web_framework()
-    print(f"\n🌐 Web Client (src/frontend/):")
+    print("\n🌐 Web Client (src/frontend/):")
     print(f"   • Framework: {web_fw}")
-    print(f"   • Styling:   Tailwind CSS")
+    print("   • Styling:   Tailwind CSS")
 
-    print(f"\n📲 Mobile Client (src/mobile/):")
+    print("\n📲 Mobile Client (src/mobile/):")
     if MOBILE_DIR.exists():
-        print(f"   • Framework: React Native (Expo SDK 51+ / 52)")
-        print(f"   • Styling:   NativeWind v4 (Tailwind CSS for Mobile)")
-        print(f"   • Targets:   iOS & Android")
-        print(f"   • Status:    ✅ Active")
+        print("   • Framework: React Native (Expo SDK 51+ / 52)")
+        print("   • Styling:   NativeWind v4 (Tailwind CSS for Mobile)")
+        print("   • Targets:   iOS & Android")
+        print("   • Status:    ✅ Active")
     else:
-        print(f"   • Status:    ℹ️ Not initialized (run: python scripts/setup_frontend.py --add-mobile)")
+        print("   • Status:    ℹ️ Not initialized (run: python scripts/setup_frontend.py --add-mobile)")
 
     print("\n" + "=" * 65)
 
@@ -78,11 +77,6 @@ def apply_preset(preset_name: str) -> bool:
         return False
 
     print(f"🔄 Switching src/frontend/ to preset: {preset_name}...")
-
-    # Backup node_modules and .env if they exist
-    node_modules = FRONTEND_DIR / "node_modules"
-    has_node_modules = node_modules.exists()
-    temp_backup = ROOT_DIR / ".frontend_tmp_backup"
 
     try:
         if FRONTEND_DIR.exists():

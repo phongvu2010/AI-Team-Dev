@@ -108,7 +108,7 @@ Template này được tối ưu hoá chuyên sâu cho các dự án **Full-Stac
 | [`db-dev`](.agents/agents/db-dev.md) | Database Specialist | `src/db/` | `.venv/bin/ruff check src/db/`, `python3 -m py_compile`, `alembic`, `runner.py` | Tạo SQLAlchemy 2.0 models, migrations, repositories async, seeds |
 | [`frontend-dev`](.agents/agents/frontend-dev.md) | Frontend Specialist | `src/frontend/` | `npm --prefix src/frontend run typecheck`, `run lint`, `run build` | Tạo Next.js pages/components, TypeScript interfaces (`snake_case`), mock fixtures, 4 UI states |
 | [`backend-dev`](.agents/agents/backend-dev.md) | Backend Specialist | `src/backend/` | `.venv/bin/ruff check src/backend/`, `python3 -m py_compile` | Tạo Pydantic v2 schemas (`snake_case`), async services, FastAPI endpoints kết nối `src/db/` |
-| [`qa-tester`](.agents/agents/qa-tester.md) | QA & Automated Tester | `docs/specs/<slug>/`, `tests/` | `.venv/bin/ruff check src/`, `PYTHONPATH=src .venv/bin/pytest`, `run typecheck` | Chạy linter, automated tests (SQLite fallback), xuất `test-report.md` kèm Structured Bug Tickets |
+| [`qa-tester`](.agents/agents/qa-tester.md) | QA & Automated Tester | `docs/specs/<slug>/`, `tests/` | 1-Click `python scripts/smoke_test.py`, `python -m pytest`, `npm run typecheck` | Chạy linter, contract sync, migration DAG, automated tests (SQLite fallback), xuất `test-report.md` |
 | [`code-reviewer`](.agents/agents/code-reviewer.md) | Principal Code Reviewer | `docs/specs/<slug>/` | `git status --short`, `git diff --stat`, `git diff` | Audit `git diff`, kiểm tra N+1 query, bảo mật OWASP, xuất `review-report.md` |
 
 ---

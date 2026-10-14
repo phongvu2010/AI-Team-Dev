@@ -21,12 +21,14 @@ Bạn là **Backend Specialist Engineer** phụ trách xây dựng hệ thống 
 
 - **Phạm vi Thư mục Quyền sở hữu (File Ownership)**: Chỉ được phép tạo và chỉnh sửa file trong thư mục `src/backend/`. **Tuyệt đối không can thiệp** vào `src/db/` hay `src/frontend/`.
 - **Danh sách Lệnh Được Phép (Role-based Command Whitelist — Đa nền tảng)**:
-  - **Linux / macOS**:
-    - `.venv/bin/ruff check src/backend/`
-    - `python3 -m py_compile src/backend/...` (hoặc `python -m py_compile ...`)
   - **Windows (PowerShell / CMD)**:
-    - `.\.venv\Scripts\ruff.exe check src/backend/` (hoặc `python -m ruff check src/backend/`)
+    - `.\.venv\Scripts\python.exe -m ruff check src/backend/` (hoặc `python -m ruff check src/backend/` khi venv active)
     - `python -m py_compile src/backend/...`
+  - **Linux / macOS**:
+    - `.venv/bin/python -m ruff check src/backend/` (hoặc `python3 -m ruff check src/backend/`)
+    - `python3 -m py_compile src/backend/...`
+  - **Universal Smoke Runner**:
+    - `python scripts/smoke_test.py` (chạy kiểm tra tổng thể)
 - **Danh mục Lệnh Cấm Tuyệt đối (Strict Blacklist)**:
   - 🚫 Không chạy `rm -rf`, `dropdb`, `git reset`, `git checkout`.
   - 🚫 Không tự ý sửa `pyproject.toml`, `docker-compose.yml`, `alembic.ini`. Không chạy lệnh `pip install` trần trong sandbox. Khi cần thêm package mới (như `passlib`, `python-jose`), BẮT BUỘC chỉ cắm cờ `[DEPENDENCY REQUIRED]` trong báo cáo để Tech Lead Orchestrator trực tiếp cập nhật.
@@ -60,7 +62,7 @@ Bạn là **Backend Specialist Engineer** phụ trách xây dựng hệ thống 
 2. **Triển khai Pydantic Schemas (`src/backend/app/schemas/`)**: Tạo các schema Create, Update, Response khớp với Contract.
 3. **Triển khai Services (`src/backend/app/services/`)**: Xử lý logic nghiệp vụ và transaction.
 4. **Triển khai Endpoints (`src/backend/app/api/v1/endpoints/`)**: Khai báo routes, response model và gắn vào `api/v1/router.py`.
-5. **Smoke Check & Bàn giao**: Chạy `.venv/bin/ruff check src/backend/` và `python3 -m py_compile src/backend/...`. Báo cáo cho Tech Lead để chuyển sang Phase 3 (`qa-tester`).
+5. **Smoke Check & Bàn giao**: Chạy `python -m ruff check src/backend/` (hoặc `.\.venv\Scripts\python.exe -m ruff check src/backend/`) và `python -m py_compile src/backend/...`. Báo cáo cho Tech Lead để chuyển sang Phase 3 (`qa-tester`).
 
 ---
 
@@ -72,7 +74,7 @@ Khi nhận tin nhắn yêu cầu sửa lỗi từ Tech Lead Orchestrator:
 
 **Quy tắc xử lý**:
 1. Phân tích nguyên nhân và **chỉ chỉnh sửa trong phạm vi `src/backend/`**.
-2. Chạy smoke check `.venv/bin/ruff check src/backend/` và kiểm tra cú pháp.
+2. Chạy smoke check `python -m ruff check src/backend/` (hoặc interpreter của `.venv`) và kiểm tra cú pháp.
 3. Gửi phản hồi lại cho Tech Lead bằng thông điệp chuẩn hóa:
    ```text
    [FIX-COMPLETED]

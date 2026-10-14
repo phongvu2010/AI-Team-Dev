@@ -85,17 +85,18 @@ def main() -> int:
     steps = [
         (1, "Python Linting (Ruff)", [py_exe, "-m", "ruff", "check", "src/"]),
         (2, "Cross-Layer Contract Verification", [py_exe, str(ROOT_DIR / "scripts" / "verify_contracts.py")]),
-        (3, "Backend & DB Automated Tests (Pytest SQLite In-Memory)", [py_exe, "-m", "pytest", "src/backend/tests", "-v"]),
+        (3, "Alembic Migration & DAG Integrity Verification", [py_exe, str(ROOT_DIR / "scripts" / "verify_migrations.py")]),
+        (4, "Backend & DB Automated Tests (Pytest SQLite In-Memory)", [py_exe, "-m", "pytest", "src/backend/tests", "src/db/tests", "-v"]),
     ]
 
     # Frontend Web step
     is_windows = platform.system() == "Windows"
     npm_cmd = "npm.cmd" if is_windows else "npm"
-    steps.append((4, "Web Frontend TypeScript Typecheck (Strict Mode)", [npm_cmd, "--prefix", "src/frontend", "run", "typecheck"]))
+    steps.append((5, "Web Frontend TypeScript Typecheck (Strict Mode)", [npm_cmd, "--prefix", "src/frontend", "run", "typecheck"]))
 
     # Optional Mobile step if node_modules are installed
     if (ROOT_DIR / "src" / "mobile" / "node_modules").exists():
-        steps.append((5, "Mobile App TypeScript Typecheck (React Native / Expo)", [npm_cmd, "--prefix", "src/mobile", "run", "typecheck"]))
+        steps.append((6, "Mobile App TypeScript Typecheck (React Native / Expo)", [npm_cmd, "--prefix", "src/mobile", "run", "typecheck"]))
 
     all_passed = True
     for step_num, title, cmd in steps:
