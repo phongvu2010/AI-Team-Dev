@@ -38,6 +38,7 @@ metrics:
 
 ## 2. Ma Trận Đối Chiếu Kịch Bản Kiểm Thử (Acceptance Criteria vs Results)
 
+### 2.1. Ma Trận Kiểm Thử Tự Động (Automated Acceptance Tests)
 | Mã AC (`plan.md`) | Mã Test Case | Tên Hàm / Kịch Bản Kiểm Thử | Tầng Phụ Trách | Kết Quả | Ghi Chú |
 | :--- | :--- | :--- | :--- | :---: | :--- |
 | **AC-01** | `TC-01` | `test_create_resource_success` | Backend API | ✅ PASSED | Trả về 201 Created |
@@ -45,6 +46,20 @@ metrics:
 | **AC-03** | `TC-03` | `test_unique_constraint_enforcement` | Database / API | ✅ PASSED | Ràng buộc hoạt động |
 | **AC-04** | `TC-04` | `UI States (Loading, Error, Empty, Success)` | Frontend Web | ✅ PASSED | Render 4 trạng thái |
 | **AC-05** | `TC-05` | `TypeScript Strict Safety Check` | Frontend | ✅ PASSED | 0 type errors, 0 any |
+
+### 2.2. Bảng Kiểm Định Trực Quan & 4 Trạng Thái Giao Diện (Visual & UI Verification qua `/browser`)
+> ℹ️ *Áp dụng cho các tính năng có giao diện Web (`src/frontend/`) hoặc Mobile Web.*
+
+- **URL Tuyến đường Kiểm tra**: `http://localhost:3000/<route>` (hoặc Vite `http://localhost:5173/<route>`)
+- **Kết quả Kiểm định Trực quan**:
+| Trạng Thái UI / Tiêu Chí | Hành Vi Mong Đợi | Kết Quả Thực Tế | Trạng Thái |
+| :--- | :--- | :--- | :---: |
+| **1. Loading State** | Skeleton loader hoặc Spinner hiển thị mượt mà khi fetch dữ liệu, không bị nhảy layout (CLS) | Skeleton hiển thị chuẩn xác | ✅ PASSED |
+| **2. Empty State** | Hiển thị thông báo thân thiện + nút CTA điều hướng khi dữ liệu rỗng | Placeholder & CTA nút tạo mới hiển thị đúng | ✅ PASSED |
+| **3. Error State** | Alert thông báo lỗi rõ ràng + Nút "Thử lại" khi API trả về mã lỗi 4xx/5xx | Banner cảnh báo đỏ kèm nút Retry | ✅ PASSED |
+| **4. Success State** | Render dữ liệu đầy đủ, chuẩn xác, style Tailwind CSS không lỗi | Render bảng / thẻ chuẩn theo design | ✅ PASSED |
+| **5. Responsive Mobile (375px)** | Giao diện tự động co giãn, hamburger menu hoặc bottom navigation hoạt động tốt | Không tràn màn hình ngang (0 horizontal scroll) | ✅ PASSED |
+| **6. Responsive Desktop (1280px)** | Bố cục grid/flex dàn đều, tận dụng tốt không gian màn hình lớn | Bố cục cân đối, typography sắc nét | ✅ PASSED |
 
 ---
 

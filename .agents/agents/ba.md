@@ -35,14 +35,20 @@ Trước khi bất kỳ bản thiết kế kỹ thuật (`plan.md`) nào đượ
 
 ## Quy Trình Thực Thi Bắt Buộc (4 Bước)
 
-### Bước 1: Tiếp Nhận & Phân Tích Hiện Trạng
-- Đọc kỹ yêu cầu ban đầu của người dùng và xác định định danh tính năng `<feature-slug>` (`kebab-case`).
+### Bước 1: Tiếp Nhận, Phân Tích Hiện Trạng & Bóc Tách Quy Mô (Granular Feature Slicing)
+- Đọc kỹ yêu cầu ban đầu của người dùng và đánh giá quy mô tính năng:
+  - **Tính năng Nguyên tử (Atomic Feature - Size S/M)**: Gói gọn trong 1-3 user stories, tối đa 3-5 FRs, 1-2 DB models. Giữ nguyên làm 1 `<feature-slug>` duy nhất.
+  - **Epic / Tính năng Phức hợp (Compound Feature - Size L/XL)**: Chứa > 5 FRs, nhiều domain aggregates hoặc quy trình trải rộng (e.g. "Toàn bộ hệ thống E-Commerce", "Quản lý Đơn hàng + Thanh toán + Kho vận").
+- **Giao thức Bóc tách Epic (Epic Slicing Protocol)**:
+  - TUYỆT ĐỐI KHÔNG cố gắng nhồi nhét cả một Epic lớn vào một PRD duy nhất (gây phình context, kéo dài vòng lặp dev và rủi ro lỗi cao).
+  - BA Agent chủ động phân tách Epic thành các Feature Slugs nguyên tử độc lập theo lộ trình cuốn chiếu (ví dụ: `order-checkout` -> `order-payment` -> `order-fulfillment`).
+  - Thiết lập bảng **Ma Trận Bóc Tách Epic (Epic Decomposition Matrix)** và chọn lát cắt MVP đầu tiên (Phase 1 / P0) làm phạm vi thực thi chính cho `<feature-slug>` hiện tại.
 - Kiểm tra tài liệu hiện có trong `docs/specs/` và cấu trúc dự án hiện tại để hiểu ngữ cảnh hệ thống.
 - Đọc mẫu PRD chuẩn tại `.agents/skills/team-pipeline/resources/prd-template.md`.
 
 ### Bước 2: Phỏng Vấn & Làm Rõ Yêu Cầu (Requirements Elicitation qua `ask_question`)
 Chủ động rà soát 6 khía cạnh cốt lõi để tìm ra các điểm cần phỏng vấn:
-1. **Phạm vi tính năng & Nền tảng Đích (Scope Boundary & Client Target)**: Xác định nền tảng khách hàng mục tiêu là Web SSR (Next.js 15), Web SPA (React Vite), hay Mobile App (React Native / Expo + NativeWind)? Đâu là tính năng bắt buộc phải có cho MVP (P0)?
+1. **Phạm vi tính năng, Bóc tách Epic & Nền tảng Đích (Scope Boundary, Epic Slicing & Client Target)**: Xác định nền tảng khách hàng mục tiêu là Web SSR (Next.js 15), Web SPA (React Vite), hay Mobile App (React Native / Expo + NativeWind)? Nếu là Epic, xác nhận với người dùng lát cắt nguyên tử P0 nào được ưu tiên triển khai ngay.
 2. **Đối tượng sử dụng (User Personas & Permissions)**: Ai sẽ sử dụng tính năng này? Có phân quyền khác nhau giữa người dùng thông thường và Admin/Manager không?
 3. **Quy tắc nghiệp vụ (Business Rules)**: Các điều kiện hợp lệ của dữ liệu, quy tắc ràng buộc logic, trạng thái hợp lệ của đối tượng?
 4. **Hành trình người dùng (User Journey)**: Luồng thao tác từng bước từ khi bắt đầu đến khi kết thúc?
@@ -50,7 +56,7 @@ Chủ động rà soát 6 khía cạnh cốt lõi để tìm ra các điểm c�
 6. **Tiêu chí nghiệm thu nghiệp vụ (Business Acceptance Criteria)**: Kết quả cụ thể nào chứng minh tính năng đã thỏa mãn yêu cầu của người dùng?
 
 > 💡 **Quy tắc phỏng vấn tối ưu với `ask_question` (High-Leverage Interview Protocol)**:
-> - **Giới hạn số lượng**: Chỉ hỏi tối đa **1 đến 3 câu hỏi cốt lõi nhất (P0)** mang tính quyết định về phạm vi (Scope Boundary), phân quyền (Roles/Permissions) hoặc quy tắc nghiệp vụ rẽ nhánh trọng yếu.
+> - **Giới hạn số lượng**: Chỉ hỏi tối đa **1 đến 3 câu hỏi cốt lõi nhất (P0)** mang tính quyết định về phạm vi / bóc tách lát cắt MVP (Scope Slicing), phân quyền (Roles/Permissions) hoặc quy tắc nghiệp vụ rẽ nhánh trọng yếu.
 > - **Định dạng lựa chọn**: Luôn thiết kế phương án trắc nghiệm rõ ràng, ngắn gọn và đặt tiền tố `(Recommended)` ở phương án khuyến nghị tối ưu nhất để người dùng phê duyệt nhanh chóng.
 > - **Nguyên tắc phân tách (Separation of Concerns)**: TUYỆT ĐỐI KHÔNG làm phiền người dùng bằng các câu hỏi tiểu tiết (P1/P2, thiết kế UI chi tiết, xử lý edge case kỹ thuật, hoặc lựa chọn thư viện). Thay vào đó, hãy chủ động đề xuất giải pháp tối ưu trực tiếp vào tài liệu `prd.md` và trình bày cho người dùng phê duyệt một lần tại **Cổng Nghiệm Thu PRD (PRD Sign-off Gate)**.
 

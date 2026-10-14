@@ -199,16 +199,19 @@ Chi tiết cấu trúc chuẩn của 4 artifacts:
 
 Khi nhận yêu cầu tính năng từ người dùng, Tech Lead áp dụng **Dynamic Model Tiering** và điều phối 6 giai đoạn:
 
-### Bước 0: Giai đoạn Requirements Elicitation & PRD (`ba` — `Model: "pro"`)
+### Bước 0: Giai đoạn Requirements Elicitation, Feature Slicing & PRD (`ba` — `Model: "pro"`)
 1. Gọi `invoke_subagent`:
    - `TypeName`: `"ba"`, `Role`: `"Business Analyst & Requirements Engineer"`, `Model`: `"pro"`.
    - *(Dùng Model Pro để đảm bảo tư duy phân tích nghiệp vụ sắc bén, phát hiện điểm mù, kịch bản góc và phỏng vấn người dùng có cấu trúc)*.
-2. `ba` tiếp nhận prompt ban đầu từ người dùng, chủ động phát hiện các yêu cầu còn mơ hồ hoặc thiếu sót, và áp dụng **High-Leverage Interview Protocol**:
-   - **Giới hạn tối đa 1 đến 3 câu hỏi (P0)** qua công cụ `ask_question`: Chỉ tập trung vào ranh giới phạm vi MVP, đối tượng tác nhân / quyền hạn người dùng (Personas & Permissions), hoặc quy tắc nghiệp vụ rẽ nhánh chính. Luôn gắn tiền tố `(Recommended)` vào lựa chọn khuyến nghị.
+2. `ba` tiếp nhận prompt ban đầu từ người dùng, chủ động phát hiện các yêu cầu còn mơ hồ hoặc thiếu sót, và áp dụng **High-Leverage Interview & Feature Slicing Protocol**:
+   - **Định cỡ & Bóc tách Quy mô Tính năng (Granular Feature Slicing)**:
+     - Đánh giá kích cỡ yêu cầu: *Atomic Feature (Size S/M: 3-5 FRs, 1-2 DB models)* vs *Epic / Multi-Domain (Size L/XL: >5 FRs, luồng nghiệp vụ phức hợp)*.
+     - Nếu phát hiện Epic lớn (ví dụ: E-commerce, Order Management, Core Banking): TUYỆT ĐỐI KHÔNG dồn toàn bộ vào 1 PRD. BA Agent chủ động phân rã Epic thành chuỗi Feature Slugs nguyên tử độc lập (ví dụ: `order-checkout` -> `order-payment` -> `order-fulfillment`), lập bảng **Ma Trận Bóc Tách Epic (Mục 1.3 PRD)** và đề xuất người dùng chọn lát cắt MVP đầu tiên (Phase 1 / P0) để thực thi cuốn chiếu.
+   - **Giới hạn tối đa 1 đến 3 câu hỏi (P0)** qua công cụ `ask_question`: Chỉ tập trung vào ranh giới phạm vi MVP / lát cắt con ưu tiên (Scope Slicing), đối tượng tác nhân / quyền hạn người dùng (Personas & Permissions), hoặc quy tắc nghiệp vụ rẽ nhánh chính. Luôn gắn tiền tố `(Recommended)` vào lựa chọn khuyến nghị.
    - **Nguyên tắc phân tách (Separation of Concerns)**: TUYỆT ĐỐI KHÔNG hỏi vụn vặt về tiểu tiết (giao diện, styling, kỹ thuật edge case, tên cột DB). Mọi điểm chi tiết này, BA chủ động đưa ra đề xuất tối ưu trực tiếp vào bản thảo PRD.
 3. `ba` xuất bản tài liệu `docs/specs/<feature-slug>/prd.md` theo mẫu chuẩn [prd-template.md](.agents/skills/team-pipeline/resources/prd-template.md).
 4. **Cổng Nghiệm Thu PRD (PRD Sign-off Gate)**:
-   - `ba` trình bày tóm tắt các quyết định và đề xuất nghiệp vụ cho người dùng xin phê duyệt (Sign-off). Người dùng nghiệm thu toàn bộ chỉ trong 1 lần duy nhất tại cổng này mà không bị làm phiền ngắt quãng.
+   - `ba` trình bày tóm tắt các quyết định, cấu trúc bóc tách Epic và đề xuất nghiệp vụ cho người dùng xin phê duyệt (Sign-off). Người dùng nghiệm thu toàn bộ chỉ trong 1 lần duy nhất tại cổng này mà không bị làm phiền ngắt quãng.
    - Khi người dùng chấp thuận, tài liệu được cập nhật `status: APPROVED_BY_USER`.
    - Tech Lead kiểm tra xác nhận trạng thái phê duyệt này trước khi kích hoạt `planner`.
 
@@ -286,8 +289,11 @@ Khi nhận yêu cầu tính năng từ người dùng, Tech Lead áp dụng **Dy
    - `PYTHONPATH=src .venv/bin/python scripts/verify_contracts.py <feature-slug>` (Tự động quét schema & model casing snake_case, chống lệch hợp đồng giữa Pydantic và TypeScript)
    - `PYTHONPATH=src ./.venv/bin/pytest src/backend/tests -v`
    - `npm --prefix src/frontend run typecheck`
-3. Xuất kết quả vào `docs/specs/<feature-slug>/test-report.md`.
-4. **Vòng lặp Tự sửa lỗi (Self-Healing Bug Fix Loop) & Bảo Toàn Ngữ Cảnh (Context Preservation)**:
+3. **Kiểm thử Trực quan Giao diện & 4 Trạng Thái UI (Visual Verification qua `/browser`)**:
+   - Đối với các tính năng có giao diện Frontend (`src/frontend/` hoặc `src/mobile/`), `qa-tester` thẩm định đầy đủ 4 trạng thái giao diện: *Loading (Skeleton), Empty (Placeholder + CTA), Error (Alert + Retry), Success (Data render chuẩn)* và kiểm tra tính tương thích Responsive trên Desktop (1280px) & Mobile (375px).
+   - Tech Lead hoặc QA Tester hướng dẫn / kích hoạt lệnh `/browser http://localhost:3000/<route>` (hoặc port tương ứng) để duyệt trực tiếp giao diện, chụp ảnh màn hình và ghi nhận kết quả vào **Mục 2.2 của `docs/specs/<feature-slug>/test-report.md`**.
+4. Xuất kết quả vào `docs/specs/<feature-slug>/test-report.md`.
+5. **Vòng lặp Tự sửa lỗi (Self-Healing Bug Fix Loop) & Bảo Toàn Ngữ Cảnh (Context Preservation)**:
    - Nếu `overall_status: FAILED`:
      - **Nguyên tắc Bảo toàn Ngữ cảnh**: Tech Lead **BẮT BUỘC sử dụng `send_message`** gửi thông điệp tới Conversation ID của squad tương ứng (`SQUAD_REGISTRY[target_agent]`).
      - **TUYỆT ĐỐI KHÔNG** gọi lệnh `invoke_subagent` tạo mới agent cho cùng squad trong vòng lặp Self-Healing. Việc tái sử dụng Conversation ID giúp Subagent duy trì 100% ngữ cảnh (working memory, context reasoning, file đã sửa, terminal history), giảm 70% token tiêu hao và sửa lỗi chuẩn xác hơn nhiều lần.
@@ -409,8 +415,9 @@ Là **Tech Lead Orchestrator**, bạn không thể tự thực thi Slash Command
 6. **Khuyến nghị `/learn`**:
    - *Bối cảnh*: Ngay sau khi người dùng hướng dẫn một quy tắc tùy chỉnh hoặc sửa một lỗi môi trường đặc thù thành công.
    - *Mẫu câu gợi ý*: `"Bạn có thể dùng lệnh /learn để hệ thống lưu quy chuẩn cấu hình này vào bộ nhớ dài hạn của Workspace cho các phiên làm việc sau."`
-7. **Khuyến nghị `/browser`**:
-   - *Bối cảnh*: Khi người dùng muốn kiểm tra giao diện người dùng Next.js trực quan trên trình duyệt hoặc audit A11y / CWV.
+7. **Khuyến nghị `/browser` (Visual Testing & UI Verification)**:
+   - *Bối cảnh*: Khi đội ngũ hoàn thành code giao diện Web/Mobile (`src/frontend/`), cần kiểm tra trực quan 4 trạng thái giao diện (Loading skeleton, Empty state, Error retry banner, Success render) và độ co giãn Responsive (Desktop 1280px vs Mobile 375px) trên trình duyệt thực tế.
+   - *Mẫu câu gợi ý*: `"Giao diện Web đã hoàn thành. Bạn có thể sử dụng lệnh /browser http://localhost:3000/<route> để mở trình duyệt kiểm tra trực tiếp 4 trạng thái UI, độ mượt của Tailwind CSS và tính tương thích responsive trên di động nhé."`
 8. **Khuyến nghị `/schedule`**:
    - *Bối cảnh*: Khi người dùng muốn đặt lịch chạy kiểm thử hoặc cron task định kỳ.
 

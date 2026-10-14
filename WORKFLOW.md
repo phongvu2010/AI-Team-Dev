@@ -130,16 +130,23 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
 
 ---
 
-### Giai đoạn 0: Phỏng vấn, Làm rõ Yêu cầu & Thiết lập PRD (`ba`)
+### Giai đoạn 0: Phỏng vấn, Làm rõ Yêu cầu, Bóc tách Epic & Thiết lập PRD (`ba`)
 - **Vai trò thực hiện**: BA Agent ([`ba`](.agents/agents/ba.md), `Model: "pro"`).
 - **Kỹ thuật thực hiện**:
-  1. **Tiếp nhận prompt & Đặt Feature Slug**: Định danh ngắn gọn dạng `kebab-case` (ví dụ: `auth-system`, `inventory-tracking`). Thư mục hồ sơ: `docs/specs/<feature-slug>/`.
+  1. **Tiếp nhận prompt, Đặt Feature Slug & Đánh Giá Quy Mô (Granular Feature Slicing)**:
+     - Định danh ngắn gọn dạng `kebab-case` (ví dụ: `auth-system`, `inventory-tracking`). Thư mục hồ sơ: `docs/specs/<feature-slug>/`.
+     - **Định cỡ (T-Shirt Sizing)**:
+       - *Atomic Feature (Size S/M)*: 1-3 user stories, tối đa 3-5 FRs, 1-2 DB models. Giữ nguyên làm 1 `<feature-slug>` duy nhất.
+       - *Epic / Compound Feature (Size L/XL)*: Phân hệ rộng (> 5 FRs, nhiều domain aggregates như E-commerce, Quản lý kho, Thanh toán).
+     - **Giao thức Bóc tách Epic (Epic Slicing Protocol)**:
+       - TUYỆT ĐỐI KHÔNG dồn toàn bộ Epic vào 1 PRD duy nhất (gây phình token context và kéo dài vòng lặp phát triển).
+       - BA Agent chủ động phân rã Epic thành chuỗi các Feature Slugs nguyên tử độc lập (ví dụ: `order-checkout` -> `order-payment` -> `order-fulfillment`), thiết lập bảng **Ma Trận Bóc Tách Epic (Mục 1.3 PRD)**, và ưu tiên lát cắt MVP (Phase 1 / P0) cho chu trình hiện tại.
   2. **Áp dụng High-Leverage Interview Protocol qua `ask_question`**:
-     - **Giới hạn số lượng (Hard limit)**: Chỉ hỏi tối đa **1 đến 3 câu hỏi cốt lõi nhất (P0)** mang tính sống còn đối với kiến trúc hoặc phạm vi (MVP Scope, Personas & Quyền hạn, Quy tắc nghiệp vụ rẽ nhánh chính).
+     - **Giới hạn số lượng (Hard limit)**: Chỉ hỏi tối đa **1 đến 3 câu hỏi cốt lõi nhất (P0)** mang tính sống còn đối với kiến trúc hoặc phạm vi (MVP Scope / Lát cắt bóc tách ưu tiên, Personas & Quyền hạn, Quy tắc nghiệp vụ rẽ nhánh chính).
      - **Định dạng lựa chọn**: Luôn gom thành các phương án trắc nghiệm rõ ràng, đánh dấu tiền tố `(Recommended)` ở phương án khuyến nghị tối ưu nhất.
      - **Nguyên tắc Phân tách Nghiệp vụ vs Tiểu tiết**: TUYỆT ĐỐI KHÔNG làm phiền người dùng bằng các câu hỏi vụn vặt (UI styling, tên trường DB, các edge cases kỹ thuật thứ yếu). Thay vào đó, BA chủ động đề xuất giải pháp tối ưu trực tiếp vào bản thảo PRD.
   3. **Xuất bản PRD**: Biên soạn hoàn chỉnh `docs/specs/<feature-slug>/prd.md` theo mẫu chuẩn [prd-template.md](.agents/skills/team-pipeline/resources/prd-template.md).
-- > 🛡️ **Quality Gate 0 (PRD Sign-off Gate)**: BA Agent tóm tắt các quyết định và đề xuất nghiệp vụ cho User để xin nghiệm thu một lần duy nhất. Khi User chấp thuận (`status: APPROVED_BY_USER`), Tech Lead mới kích hoạt `planner`.
+- > 🛡️ **Quality Gate 0 (PRD Sign-off Gate)**: BA Agent tóm tắt các quyết định, lộ trình bóc tách Epic và đề xuất nghiệp vụ cho User để xin nghiệm thu một lần duy nhất. Khi User chấp thuận (`status: APPROVED_BY_USER`), Tech Lead mới kích hoạt `planner`.
 
 ---
 
@@ -296,7 +303,14 @@ Mọi tính năng mới hoặc phân hệ nghiệp vụ đều vận hành qua c
     npm --prefix src/frontend run typecheck
     npm --prefix src/mobile run typecheck # (Nếu kích hoạt Mobile App)
     ```
-- Xuất báo cáo tại `docs/specs/<feature-slug>/test-report.md` (kèm Chỉ số Metrics và Structured Bug Tickets).
+- **Kiểm Thử Trực Quan Giao Diện & 4 Trạng Thái UI (Visual Verification qua `/browser`)**:
+  - Đối với các tính năng có giao diện Web hoặc Mobile (`src/frontend/` hoặc `src/mobile/`), `qa-tester` kết hợp kiểm tra typecheck với việc thẩm định trực quan đủ 4 trạng thái UI:
+    1. *Loading State*: Skeleton loader / Spinner hiển thị chống layout shift (CLS).
+    2. *Empty State*: Thông điệp thân thiện + Nút kêu gọi hành động (CTA) khi dữ liệu rỗng.
+    3. *Error State*: Banner cảnh báo đỏ + Nút "Thử lại" (Retry) khi API lỗi.
+    4. *Success State*: Dữ liệu hiển thị chuẩn xác, bố cục responsive Desktop (1280px) & Mobile (375px).
+  - Khuyến nghị kích hoạt phím tắt `/browser http://localhost:3000/<route>` trên chat Antigravity 2.0 để tương tác trực quan, chụp ảnh màn hình và đối chiếu AC.
+- Xuất báo cáo tại `docs/specs/<feature-slug>/test-report.md` (kèm Chỉ số Metrics, Bảng Kiểm Định Trực Quan Mục 2.2 và Structured Bug Tickets).
 - **Vòng lặp Self-Healing (Tự sửa lỗi) & Bảo Toàn Ngữ Cảnh (Context Preservation)**:
   - Nếu `overall_status: FAILED`:
     - **Bảo toàn Ngữ cảnh**: Tech Lead **BẮT BUỘC dùng `send_message`** gửi yêu cầu sửa lỗi tới Conversation ID của squad (`SQUAD_REGISTRY[target_agent]`). TUYỆT ĐỐI KHÔNG gọi `invoke_subagent` mới.
@@ -474,14 +488,14 @@ Trên giao diện Antigravity 2.0, **Slash Commands** là các phím tắt trự
 | **`/boost`** | Bài toán thuật toán khó, thiết kế module cốt lõi, hoặc refactor kiến trúc lớn | **Giai đoạn 1 & 4 (Kiến trúc & Review)** | Kích hoạt chế độ Deep Thinking với mô hình mạnh nhất (`pro`), phân tích đa chiều và kiểm chứng nghiêm ngặt để đưa ra giải pháp tối ưu. |
 | **`/teamwork-preview`**| Trước khi bắt đầu một Epic lớn, muốn xem trước cách các subagents phối hợp | **Trước Giai đoạn 2 (Dev Squads)** | Trực quan hóa sơ đồ phối hợp, phân vai trò, quyền hạn thư mục và luồng chuyển giao dữ liệu giữa các thành viên trong đội. |
 | **`/learn`** | Khi bạn vừa hướng dẫn AI một quy tắc mới hoặc vừa sửa một lỗi môi trường đặc thù | **Sau khi xử lý sự cố / Customization** | Yêu cầu Antigravity ghi nhớ vĩnh viễn kinh nghiệm hoặc quy tắc này vào tri thức workspace cho các phiên làm việc tiếp theo. |
-| **`/browser`** | Cần kiểm tra giao diện Next.js trực quan trên trình duyệt, test luồng UX/UI | **Giai đoạn 4: QA Testing & UI Audit** | Kích hoạt công cụ duyệt web để tương tác với trang đích, chụp ảnh màn hình, kiểm tra rendering thực tế và accessibility. |
+| **`/browser`** | Cần kiểm tra giao diện trực quan trên trình duyệt thực tế, audit 4 trạng thái UI, responsive mobile/desktop | **Giai đoạn 4: QA Testing & UI Audit** | Kích hoạt trình duyệt duyệt trang đích (`http://localhost:3000/...`), chụp ảnh màn hình, kiểm thử 4 trạng thái UI (Loading/Empty/Error/Success) và A11y. |
 | **`/schedule`** | Cần hẹn giờ hoặc đặt lịch chạy kiểm thử, smoke test, kiểm tra schema định kỳ | **Bảo trì / Giám sát liên tục** | Thiết lập bộ đếm một lần hoặc cron job định kỳ trong nền (ví dụ: chạy test kiểm tra drift mỗi sáng). |
 
 ### 7.2. Kịch Bản Sử Dụng Điển Hình (Practical Scenarios)
 
-1. **Khởi động một Phân hệ Mới với BA**:
+1. **Khởi động một Phân hệ Mới với BA & Bóc tách Epic**:
    * *Người dùng gõ*: `/grill-me Hãy cùng tôi thiết lập tính năng Quản lý Đơn hàng (Order Management)`
-   * *Hiệu ứng*: BA Agent lập tức đặt các câu hỏi trọng tâm P0 về luồng trạng thái đơn hàng, phương thức thanh toán và phân quyền, sau đó xuất bản `docs/specs/order-management/prd.md`.
+   * *Hiệu ứng*: BA Agent lập tức phân tích quy mô Epic, bóc tách thành các lát cắt nguyên tử (e.g. `order-checkout` -> `order-payment`), đặt các câu hỏi trọng tâm P0 về luồng trạng thái đơn hàng, phương thức thanh toán và phân quyền, sau đó xuất bản `docs/specs/order-management/prd.md`.
 
 2. **Chạy Tự Động Xuyên Suốt Tính Năng Đến Khi Bàn Giao**:
    * *Người dùng gõ*: `/goal Triển khai hoàn chỉnh tính năng order-management theo prd.md đã duyệt`
@@ -490,4 +504,8 @@ Trên giao diện Antigravity 2.0, **Slash Commands** là các phím tắt trự
 3. **Ghi Nhớ Quy Chuẩn Dự Án Đặc Thù**:
    * *Người dùng gõ*: `/learn Hãy luôn sử dụng asyncpg pool với Transaction Mode port 6543 cho FastAPI runtime và Session Mode port 5432 cho Alembic migrations`
    * *Hiệu ứng*: Antigravity lưu quy chuẩn này vào cấu hình workspace, đảm bảo mọi subagent trong tương lai luôn tuân thủ chính xác.
+
+4. **Kiểm Tra Trực Quan Giao Diện & 4 Trạng Thái UI**:
+   * *Người dùng gõ*: `/browser http://localhost:3000/orders Kiểm tra 4 trạng thái UI Loading, Empty, Error, Success và độ co giãn mobile 375px`
+   * *Hiệu ứng*: Antigravity mở trình duyệt truy cập route chỉ định, tương tác với các nút bấm, chụp ảnh màn hình kiểm chứng và hỗ trợ QA Tester đối chiếu trực quan với AC.
 

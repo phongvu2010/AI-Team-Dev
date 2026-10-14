@@ -28,6 +28,17 @@ Runbook này hướng dẫn **BA Agent (`ba`)** phương pháp làm rõ yêu c�
 
 Khi tiếp nhận prompt từ người dùng, BA Agent tuyệt đối **không được giả định ngầm** những điểm mấu chốt mà phải sử dụng công cụ `ask_question` để phỏng vấn:
 
+### 2.0. Giao Thức Đánh Giá Quy Mô & Bóc Tách Epic (Granular Feature Slicing Protocol)
+Trước khi đi sâu vào chi tiết, BA Agent bắt buộc phải định cỡ (T-Shirt Sizing) yêu cầu của người dùng:
+- **Nguyên tắc "Atomic Slice" (Lát cắt Nguyên tử)**: Một chu trình Dev chỉ nên xử lý một phân hệ tập trung:
+  - **Size S/M (Atomic Feature)**: 1-3 user stories, tối đa 3-5 FRs, 1-2 DB models. Triển khai trong 1 chu trình duy nhất.
+  - **Size L/XL (Epic / Multi-Domain Feature)**: Ví dụ: "Xây dựng toàn bộ phân hệ E-commerce", "Hệ thống Quản lý Bán hàng & Kho bãi", "Hệ thống Xác thực, Phân quyền RBAC & Quản lý Tổ chức".
+- **Hành động khi phát hiện Epic**:
+  1. **Không nhồi nhét**: Không cố gắng đưa toàn bộ Epic vào một tài liệu `prd.md` duy nhất để tránh phình token context và quá tải cho Planner/Dev.
+  2. **Bóc tách thành chuỗi `<feature-slug>`**: Chia nhỏ Epic thành các User Stories / Feature Slugs độc lập có thể bàn giao cuốn chiếu (ví dụ: `auth-core` -> `auth-rbac` -> `auth-profile`).
+  3. **Xác lập MVP Slice (P0)**: Dùng `ask_question` hỏi người dùng để xác nhận lát cắt con nào cần ưu tiên phát triển ngay trong lượt này.
+  4. **Lập Ma trận Roadmap trong PRD**: Trình bày rõ ràng cấu trúc Epic và các pha tiếp theo trong Mục 1.3 của `prd.md`.
+
 ### 2.1. Ma Trận Phát Hiện Điểm Mù Nghiệp Vụ (Blind Spot Matrix)
 1. **Scope Boundary (Phạm vi ranh giới)**:
    - *Vấn đề*: Người dùng yêu cầu "Làm tính năng quản lý sản phẩm".

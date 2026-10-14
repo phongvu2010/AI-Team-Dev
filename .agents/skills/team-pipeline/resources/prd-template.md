@@ -27,6 +27,18 @@ iteration: 1
   - *KPI 1*: <Ví dụ: Giảm 50% thời gian tạo bài viết>
   - *KPI 2*: <Ví dụ: 0% lỗi mất dữ liệu khi chuyển trang>
 
+### 1.3. Ma Trận Bóc Tách Quy Mô (Epic Decomposition & Granular Feature Slicing)
+> ℹ️ *Điền mục này nếu yêu cầu ban đầu của người dùng là một Epic hoặc hệ thống phức hợp lớn.*
+
+- **Định danh Epic cha**: `<epic-slug>`
+- **Định cỡ (T-Shirt Size)**: `Size S` | `Size M` | `Size L` | `Size XL`
+- **Lộ trình Bóc tách Lát cắt (Slicing Roadmap)**:
+| Lát cắt / Feature Slug | Tên Phân Hệ | Phạm vi Nghiệp vụ Tóm tắt | Phân kỳ Triển khai | Trạng thái Hiện tại |
+| :--- | :--- | :--- | :---: | :---: |
+| `<current-feature-slug>` | Phân hệ cốt lõi MVP | <Tóm tắt phạm vi của PRD hiện tại> | **Phase 1 (P0)** | 🟡 **ACTIVE (Hiện tại)** |
+| `<child-feature-slug-2>` | Phân hệ mở rộng / Nâng cao | <Tóm tắt phạm vi tiếp theo> | Phase 2 (P1) | ⚪ Queued |
+| `<child-feature-slug-3>` | Phân hệ tích hợp / Báo cáo | <Tóm tắt phạm vi tương lai> | Phase 3 (P2) | ⚪ Backlog |
+
 ---
 
 ## 2. Chân Dung Người Dùng & Hành Trình (User Personas & User Journeys)

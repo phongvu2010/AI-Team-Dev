@@ -53,14 +53,17 @@ Nhằm đảm bảo tính cô lập và toàn vẹn của hệ thống, mọi t�
 
 ## 3. Quy Trình Điều Phối Chi Tiết Cho Tech Lead (Main Agent)
 
-### Bước 0: Khởi chạy `ba` & Làm rõ yêu cầu, Thiết lập PRD (Requirements Elicitation & PRD Gate)
+### Bước 0: Khởi chạy `ba` & Bóc tách Tính năng, Thiết lập PRD (Requirements Elicitation, Slicing & PRD Gate)
 Gọi `invoke_subagent`:
 - `TypeName`: `"ba"`
 - `Role`: `"Business Analyst & Requirements Engineer"`
 - `Model`: `"pro"` *(Model Pro đảm bảo tư duy phân tích nghiệp vụ sắc bén, phát hiện điểm mù và thiết lập kịch bản phỏng vấn)*
-- `Prompt`: Phân tích prompt ban đầu từ User. Áp dụng **High-Leverage Interview Protocol**: chỉ sử dụng `ask_question` cho tối đa 1 đến 3 câu hỏi cốt lõi nhất (P0) về ranh giới phạm vi, quyền hạn và quy tắc rẽ nhánh; các điểm chi tiết thứ yếu hãy chủ động đề xuất giải pháp tối ưu trong PRD. Xuất bản PRD tại `docs/specs/<feature-slug>/prd.md` theo mẫu `.agents/skills/team-pipeline/resources/prd-template.md`.
+- `Prompt`: Phân tích prompt ban đầu từ User. Áp dụng **Granular Feature Slicing & High-Leverage Interview Protocol**:
+  - Nhận diện quy mô: Nếu là Epic / phân hệ phức hợp (> 5 FRs, đa domain), chủ động bóc tách thành chuỗi các Feature Slugs nguyên tử độc lập (e.g. `order-checkout` -> `order-payment`), lập Ma Trận Bóc Tách Epic và chọn lát cắt MVP (P0) cho chu trình hiện tại.
+  - Sử dụng `ask_question` tối đa 1 đến 3 câu hỏi cốt lõi nhất (P0) về lát cắt ưu tiên, ranh giới phạm vi, quyền hạn và quy tắc rẽ nhánh; các điểm chi tiết thứ yếu chủ động đề xuất giải pháp tối ưu trong PRD.
+  - Xuất bản PRD tại `docs/specs/<feature-slug>/prd.md` theo mẫu `.agents/skills/team-pipeline/resources/prd-template.md`.
 - **Cổng Nghiệm Thu PRD (PRD Sign-off Gate)**:
-  - `ba` trình bày tóm tắt cho User và xin phê duyệt (Sign-off) các đề xuất nghiệp vụ.
+  - `ba` trình bày tóm tắt cho User và xin phê duyệt (Sign-off) các đề xuất nghiệp vụ và lộ trình bóc tách Epic.
   - Khi User chấp thuận, tài liệu được gắn `status: APPROVED_BY_USER`.
   - Tech Lead kiểm tra xác nhận sự phê duyệt này trước khi chuyển sang Bước 1.
 
@@ -118,7 +121,8 @@ Gọi `invoke_subagent` với `TypeName: "qa-tester"`, `Model: "flash"`:
   3. Pytest: `python -m pytest src/backend/tests -v` (tự động nhận `pythonpath = ["src"]` từ pyproject.toml)
      *(Mặc định chạy SQLite in-memory cô lập. Các bài test có tính năng đặc thù PostgreSQL được gắn `@pytest.mark.postgres_only` sẽ tự động skip an toàn khi chạy trên SQLite)*.
   4. Frontend Typecheck: `npm --prefix src/frontend run typecheck`
-- Xuất báo cáo theo mẫu `.agents/skills/team-pipeline/resources/test-report-template.md` tại `docs/specs/<feature-slug>/test-report.md`.
+  5. Visual UI Verification: Khuyến nghị/kích hoạt `/browser http://localhost:3000/<route>` để kiểm định trực quan 4 trạng thái giao diện (*Loading*, *Empty*, *Error*, *Success*) và responsive desktop/mobile.
+- Xuất báo cáo theo mẫu `.agents/skills/team-pipeline/resources/test-report-template.md` tại `docs/specs/<feature-slug>/test-report.md` (bao gồm Bảng Kiểm Định Trực Quan Mục 2.2).
 - **Vòng lặp Self-Healing (Tự sửa lỗi) & Bảo Toàn Ngữ Cảnh (Context Preservation)**:
   - Nếu `overall_status: FAILED`:
     - **Bảo toàn Ngữ cảnh**: Tech Lead **BẮT BUỘC sử dụng `send_message`** gửi yêu cầu sửa lỗi tới Conversation ID của squad liên quan (`SQUAD_REGISTRY[target_agent]`).

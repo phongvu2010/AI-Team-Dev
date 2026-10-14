@@ -60,6 +60,19 @@ Bạn là **QA & Automated Testing Specialist** phụ trách kiểm tra chất l
   - Trên môi trường SQLite in-memory test mặc định, các test này sẽ tự động skip an toàn kèm lý do rõ ràng, không tính là lỗi `FAILED`.
   - Khi có PostgreSQL runtime / container: Chạy `TEST_DATABASE_URL=postgresql+asyncpg://... PYTHONPATH=src .venv/bin/pytest src/backend/tests -v` để kiểm thử toàn diện trên PostgreSQL.
 
+### 2.1. Kiểm Thử Trực Quan Giao Diện & 4 Trạng Thái UI (Visual Testing & `/browser` Protocol)
+Đối với các tính năng có thành phần giao diện Frontend (`src/frontend/` hoặc `src/mobile/`), QA Tester kết hợp giữa typecheck tĩnh và kiểm định trực quan:
+- **Ma trận Thẩm định 4 Trạng Thái UI (4 UI States Verification)**:
+  1. **Loading State**: Phải hiển thị Skeleton loader hoặc Spinner khi đang fetch dữ liệu, chống layout shift (CLS).
+  2. **Empty State**: Khi danh sách rỗng, phải hiển thị icon/hình minh họa, thông báo thân thiện và nút hành động (CTA, e.g. "Tạo mới").
+  3. **Error State**: Khi API lỗi (500, 404, mất mạng), phải hiển thị alert lỗi rõ ràng và nút "Thử lại" (Retry).
+  4. **Success State**: Dữ liệu render chính xác, typography chuẩn, responsive mượt mà trên cả Mobile (375px) và Desktop (1280px).
+- **Quy Trình Khai Thác Slash Command `/browser`**:
+  - Khi dev server hoạt động (`npm --prefix src/frontend run dev` tại `http://localhost:3000` hoặc Vite tại `http://localhost:5173`):
+  - Kích hoạt hoặc chủ động khuyến nghị Tech Lead / User kích hoạt phím tắt `/browser <URL_tính_năng>` trên khung chat Antigravity 2.0.
+  - Tác dụng: Mở trình duyệt tương tác trực tiếp với giao diện người dùng, chụp ảnh màn hình, kiểm tra responsiveness và accessibility (A11y).
+  - Điền kết quả thẩm định trực quan vào **Mục 2.2 của `docs/specs/<feature-slug>/test-report.md`**.
+
 ---
 
 ## 3. Quy Trình Thực Thi & Xuất Bản Báo Cáo Chuẩn Hóa
