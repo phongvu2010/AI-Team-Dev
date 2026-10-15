@@ -1,0 +1,40 @@
+{
+  "project": "MotoCare_Upgrade",
+  "version": "1.0.0",
+  "epic_count": 3,
+  "stories": [
+    {
+      "id": "US-01",
+      "epic": "Authentication & Profile",
+      "title": "Đăng ký & Đăng nhập Người Dùng",
+      "as_a": "Khách hàng",
+      "i_want_to": "Đăng ký và đăng nhập nhanh bằng số điện thoại và mật khẩu",
+      "so_that": "Tôi có thể theo dõi lịch sử và trạng thái đơn hàng của mình",
+      "priority": "MUST_HAVE",
+      "story_points": 3,
+      "acceptance_criteria_gherkin": "Scenario: Đăng ký tài khoản mới thành công\n  Given số điện thoại '0912345678' chưa từng đăng ký\n  When người dùng nhập họ tên và mật khẩu hợp lệ\n  Then hệ thống tạo tài khoản mới và trả về HTTP 201 kèm Access Token JWT\n\nScenario: Đăng ký trùng số điện thoại\n  Given số điện thoại '0912345678' đã tồn tại trong DB\n  When người dùng cố gắng đăng ký lại\n  Then hệ thống từ chối với HTTP 409 Conflict và thông báo lỗi rõ ràng"
+    },
+    {
+      "id": "US-02",
+      "epic": "Core Order & Booking",
+      "title": "Đặt hàng / Đặt lịch Phụ tùng & Dịch vụ Sửa chữa Xe",
+      "as_a": "Khách hàng",
+      "i_want_to": "Chọn dịch vụ Phụ tùng & Dịch vụ Sửa chữa Xe và chọn thời gian thực hiện",
+      "so_that": "Đơn hàng của tôi được chuẩn bị chu đáo và không bị chờ đợi",
+      "priority": "MUST_HAVE",
+      "story_points": 5,
+      "acceptance_criteria_gherkin": "Scenario: Đặt dịch vụ vào khung giờ còn trống\n  Given khung giờ được chọn còn slot trống hợp lệ\n  When người dùng bấm xác nhận đặt đơn\n  Then hệ thống tạo đơn với trạng thái 'CONFIRMED' và trừ 1 slot còn trống\n\nScenario: Từ chối khi vượt công suất (Giới hạn tối đa 3 xe mỗi khung giờ (BR-01))\n  Given khung giờ đã đạt ngưỡng giới hạn tối đa\n  When người dùng cố gắng đặt thêm\n  Then hệ thống từ chối với HTTP 400 Bad Request và thông báo 'Khung giờ đã đầy chỗ'"
+    },
+    {
+      "id": "US-03",
+      "epic": "Catalog & Pricing",
+      "title": "Tra cứu Bảng Giá Phụ tùng & Dịch vụ Sửa chữa Xe",
+      "as_a": "Khách hàng và Nhân viên",
+      "i_want_to": "Xem danh mục mặt hàng niêm yết minh bạch kèm hình ảnh và đơn giá",
+      "so_that": "Tôi nắm rõ chi phí chính xác trước khi ra quyết định mua hàng",
+      "priority": "MUST_HAVE",
+      "story_points": 3,
+      "acceptance_criteria_gherkin": "Scenario: Tra cứu danh mục sản phẩm công khai\n  Given hệ thống có danh mục sản phẩm đang hoạt động\n  When người dùng gửi yêu cầu GET /api/v1/catalog\n  Then hệ thống trả về danh sách sản phẩm HTTP 200 kèm đơn giá niêm yết"
+    }
+  ]
+}

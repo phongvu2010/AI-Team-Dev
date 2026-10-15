@@ -1,0 +1,47 @@
+[
+  {
+    "id": "BE-01",
+    "team": "backend",
+    "title": "Khởi tạo Clean Architecture Core, Config & Security JWT",
+    "depends_on": []
+  },
+  {
+    "id": "BE-02",
+    "team": "backend",
+    "title": "Xây dựng Schemas DTOs & Models cơ sở dữ liệu",
+    "depends_on": [
+      "BE-01"
+    ]
+  },
+  {
+    "id": "BE-03",
+    "team": "backend",
+    "title": "Hiện thực hóa Services, Business Rules (BR-01) & Routers",
+    "depends_on": [
+      "BE-02"
+    ]
+  },
+  {
+    "id": "FE-01",
+    "team": "frontend",
+    "title": "Khởi tạo React Native TypeScript, Zustand Store & API Client",
+    "depends_on": []
+  },
+  {
+    "id": "FE-02",
+    "team": "frontend",
+    "title": "Xây dựng Giao diện Đặt hàng & Tra cứu Danh mục",
+    "depends_on": [
+      "FE-01",
+      "BE-02"
+    ]
+  },
+  {
+    "id": "DO-01",
+    "team": "devops",
+    "title": "Xây dựng Multi-stage Dockerfile & docker-compose (FastAPI + PostgreSQL)",
+    "depends_on": [
+      "BE-03"
+    ]
+  }
+]

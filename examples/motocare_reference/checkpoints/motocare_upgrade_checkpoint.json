@@ -1,0 +1,93 @@
+{
+  "project_name": "MotoCare_Upgrade",
+  "raw_requirements": "# YÊU CẦU THÔ TỪ KHÁCH HÀNG (SAMPLE CLIENT BRIEF)\n**Tên dự án:** MotoCare SmartApp\n**Khách hàng:** Hệ thống Chuỗi Tiệm Xe Máy Toàn Quốc\n\n---\n\nChúng tôi muốn xây dựng một hệ thống phần mềm bao gồm Ứng dụng Di Động cho khách hàng và Hệ thống Quản trị cho nhân viên tiếp nhận:\n\n1. **Khách hàng:**\n   - Muốn xem trước bảng giá phụ tùng, dầu nhớt và tiền công thợ minh bạch để tránh bị \"chặt chém\".\n   - Muốn đặt lịch hẹn bảo dưỡng chọn giờ trước, tránh việc mang xe đến tiệm phải ngồi chờ cả buổi.\n   - Nhận thông báo khi xe đang sửa, khi xe đã sửa xong để đến nhận xe.\n   - Thanh toán được bằng quét mã QR hoặc tiền mặt tại quầy.\n\n2. **Cửa hàng / Nhân viên:**\n   - Tiếp nhận xe vào xưởng, không nhận quá nhiều xe trong cùng 1 khung giờ làm quá tải thợ (tối đa 3 xe/khung giờ).\n   - Xuất hóa đơn nghiệm thu gồm tiền phụ tùng + tiền công.\n   - Kiểm soát số lượng phụ tùng trong kho để biết khi nào cần nhập thêm.\n",
+  "current_phase": "completed",
+  "tech_lead_profile": {
+    "tech_lead": {
+      "name": "Tech Lead & Solution Reviewer",
+      "familiar_stacks": {
+        "backend": [
+          "Python (FastAPI)",
+          "Node.js (Express / NestJS / Fastify)"
+        ],
+        "mobile_frontend": [
+          "React Native",
+          "React / Next.js (TypeScript)"
+        ],
+        "database": [
+          "PostgreSQL",
+          "MongoDB",
+          "Redis"
+        ]
+      },
+      "architectural_preference": {
+        "strategy": "prioritize_familiar_when_suitable",
+        "explanation": "Hệ thống tự chủ phân tích bài toán để chọn kiến trúc tối ưu. Tuy nhiên, khi có nhiều phương án công nghệ tương đồng về hiệu năng và yêu cầu nghiệp vụ, hệ thống PHẢI ưu tiên lựa chọn Python/FastAPI (Backend) và React Native / Node.js để Tech Lead có thể dễ dàng review thủ công, kiểm soát rủi ro và bảo trì lâu dài.\n"
+      }
+    }
+  },
+  "selected_tech_stack": {
+    "backend_framework": "Python (FastAPI v0.110+)",
+    "backend_orm": "SQLAlchemy 2.0 (Async) + Alembic",
+    "data_validation": "Pydantic v2.6+",
+    "frontend_mobile": "React Native (TypeScript) + React Navigation",
+    "state_management": "Zustand + TanStack Query",
+    "database": "PostgreSQL 15+",
+    "caching_session": "Redis 7.0+",
+    "api_specification": "OpenAPI 3.0.3 (Contract-First)",
+    "rationale": "1. Ưu tiên tuyệt đối theo sở trường của Tech Lead: Python/FastAPI và React Native/TypeScript.\n2. FastAPI cho hiệu năng IO bất đồng bộ xuất sắc, sinh OpenAPI docs tự động từ Pydantic.\n3. PostgreSQL 15+ đảm bảo toàn vẹn dữ liệu ACID và bảo vệ giao dịch đặt hàng."
+  },
+  "artifacts": {
+    "PRD": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/artifacts/01_discovery/PRD.md",
+    "user_stories": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/artifacts/01_discovery/user_stories.json",
+    "clarification_qna": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/artifacts/01_discovery/clarification_qna.md",
+    "ui_ux_specs": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/artifacts/01_discovery/ui_ux_specifications.md",
+    "architecture_design": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/artifacts/02_architecture/architecture_design.md",
+    "openapi": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/artifacts/02_architecture/openapi.yaml",
+    "erd": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/artifacts/02_architecture/erd.mermaid",
+    "security_architecture": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/artifacts/02_architecture/security_architecture.md",
+    "tasks_dag": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/artifacts/02_architecture/task_backlog_dag.json",
+    "backend_source": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/output_project/backend",
+    "frontend_source": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/output_project/frontend",
+    "infra_source": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/output_project/infra",
+    "code_review_report": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/artifacts/04_quality/code_review_report.md",
+    "security_audit_report": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/artifacts/04_quality/security_audit_report.md",
+    "test_summary": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/artifacts/04_quality/test_summary.json",
+    "client_handover_package": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/artifacts/05_handover/client_handover_package.md",
+    "uat_checklist": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/artifacts/05_handover/UAT_CHECKLIST.md",
+    "user_manual": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/artifacts/05_handover/USER_MANUAL.md",
+    "project_readme": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/output_project/README.md",
+    "release_zip_package": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/artifacts/05_handover/motocare_upgrade_release_v1.0.0_20261010_220708.zip",
+    "release_manifest": "/Users/hunterdo/Documents/Python Project/Multi-Agents-Dev/workspaces/artifacts/05_handover/RELEASE_MANIFEST.json"
+  },
+  "gate_decisions": {
+    "gate_1_prd": {
+      "gate_id": "gate_1_prd",
+      "reviewer": "Automated System (Product Owner / Tech Lead)",
+      "status": "approved",
+      "feedback": "Auto-approved via non-interactive mode.",
+      "timestamp": "2026-10-10T22:07:07.242791"
+    },
+    "gate_2_architecture": {
+      "gate_id": "gate_2_architecture",
+      "reviewer": "Automated System (Tech Lead / Principal Architect)",
+      "status": "approved",
+      "feedback": "Auto-approved via non-interactive mode.",
+      "timestamp": "2026-10-10T22:07:07.252198"
+    },
+    "gate_3_deploy": {
+      "gate_id": "gate_3_deploy",
+      "reviewer": "Automated System (Tech Lead / Release Manager)",
+      "status": "approved",
+      "feedback": "Auto-approved via non-interactive mode.",
+      "timestamp": "2026-10-10T22:07:08.304630"
+    }
+  },
+  "review_feedback_history": [],
+  "qa_defect_count": 0,
+  "current_iteration": 1,
+  "max_iterations": 3,
+  "is_success": true,
+  "notes": null,
+  "platform": "auto"
+}

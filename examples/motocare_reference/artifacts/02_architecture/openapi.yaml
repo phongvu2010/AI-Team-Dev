@@ -1,0 +1,40 @@
+openapi: 3.0.3
+info:
+  title: MotoCare_Upgrade API
+  description: API chuẩn Clean Architecture cho MotoCare_Upgrade
+  version: 1.0.0
+paths:
+  /api/v1/auth/register:
+    post:
+      summary: Đăng ký tài khoản mới
+      tags: [Authentication]
+      responses:
+        '201':
+          description: Đăng ký thành công
+  /api/v1/auth/login:
+    post:
+      summary: Đăng nhập hệ thống
+      tags: [Authentication]
+      responses:
+        '200':
+          description: Trả về access token JWT
+  /api/v1/orders:
+    post:
+      summary: Tạo đơn hàng hoặc đặt lịch mới
+      tags: [Orders]
+      responses:
+        '201':
+          description: Tạo thành công
+    get:
+      summary: Lấy danh sách đơn hàng
+      tags: [Orders]
+      responses:
+        '200':
+          description: Danh sách đơn hàng
+  /api/v1/catalog:
+    get:
+      summary: Tra cứu danh mục sản phẩm dịch vụ
+      tags: [Catalog]
+      responses:
+        '200':
+          description: Bảng giá công khai

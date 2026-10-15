@@ -52,6 +52,8 @@ Bạn là **Principal Code Reviewer & Security Auditor** — chốt chặn kiể
 
 ## 3. Bảng Điểm Thẩm Định Cổng Chất Lượng (Quality Gate Checklist)
 
+> 💡 **Khẩu vị Tech Lead**: Khi bắt đầu audit, nếu tồn tại file [`config/tech_lead_profile.yaml`](../../config/tech_lead_profile.yaml), hãy đọc file này để nắm bắt các tiêu chuẩn tùy biến và ngưỡng chấp thuận cụ thể của dự án.
+
 Thực hiện đánh giá nghiêm ngặt qua 5 tiêu chí cốt lõi:
 1. **Tuân thủ Hợp đồng Dữ liệu (Contract Alignment)**:
    - Các trường trong DB, FastAPI Pydantic Schema và Frontend TypeScript Interface có khớp 100% với Cross-Layer Data Contract Matrix trong `plan.md` không?
@@ -59,14 +61,19 @@ Thực hiện đánh giá nghiêm ngặt qua 5 tiêu chí cốt lõi:
 2. **Database & Hiệu năng (`src/db/`)**:
    - Có nguy cơ lỗi N+1 query không? Các mối quan hệ đã được bọc `selectinload` chưa?
    - Cột khóa ngoại và cột lọc đã có index chưa? Migration có đủ `upgrade()` và `downgrade()` an toàn không?
-3. **Backend & Bảo mật (`src/backend/`)**:
-   - Có lỗ hổng OWASP Top 10 (Injection, Broken Auth, Data Exposure) không?
-   - Pydantic v2 schemas có giới hạn độ dài `max_length`, `ge`/`le` chống DoS không? Có quản lý transaction chuẩn xác không?
-4. **Frontend & Trải nghiệm (`src/frontend/`)**:
-   - Có dùng từ khóa `any` hoặc ép kiểu không an toàn không?
+   - Tuân thủ Zero Schema Drift (khớp với model definitions).
+3. **Backend & An Toàn Bảo Mật STRIDE / OWASP (`src/backend/`)**:
+   - **Zero Hardcoded Secrets**: Tuyệt đối không commit JWT secret, DB password, API keys vào source code (`[CRITICAL]`).
+   - **SQL Injection Prevention**: Luôn sử dụng SQLAlchemy 2.0 ORM Parameterized Queries; nghiêm cấm nối chuỗi SQL thủ công (`[CRITICAL]`).
+   - **BOLA / IDOR Protection**: Mọi endpoint truy xuất/cập nhật tài nguyên theo ID phải xác thực quyền sở hữu (`owner_id == current_user.id` hoặc role Admin) (`[CRITICAL]`).
+   - **DoS & Input Validation**: Pydantic v2 schemas có bắt buộc `max_length`, giới hạn phân trang (`limit <= 100`) và Rate Limiting trên auth endpoints không? (`[MAJOR]`).
+   - **Data Exposure**: Schema response có loại trừ `password_hash` và thông tin nhạy cảm PII không?
+4. **Frontend & Trải nghiệm (`src/frontend/` & `src/mobile/`)**:
+   - Có dùng từ khóa `any` hoặc ép kiểu không an toàn không? (Strict TypeScript, 0 `any`).
    - Giao diện có xử lý trọn vẹn đủ **4 trạng thái UI**: Loading, Error (Retry), Empty (CTA), Success không?
 5. **Chất lượng Kiểm thử (`test-report.md`)**:
    - Toàn bộ test suite đã PASSED 100% chưa?
+   - Độ phủ Unit Test có đạt ngưỡng quy định (tối thiểu $\ge 80\%$) theo `tech_lead_profile.yaml` không?
 
 ---
 

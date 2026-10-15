@@ -1,0 +1,47 @@
+{
+  "project_name": "MotoCare_Upgrade",
+  "version": "1.0.0",
+  "release_date": "2026-10-10T22:07:08.307023",
+  "target_tech_stack": {
+    "backend_framework": "Python (FastAPI v0.110+)",
+    "backend_orm": "SQLAlchemy 2.0 (Async) + Alembic",
+    "data_validation": "Pydantic v2.6+",
+    "frontend_mobile": "React Native (TypeScript) + React Navigation",
+    "state_management": "Zustand + TanStack Query",
+    "database": "PostgreSQL 15+",
+    "caching_session": "Redis 7.0+",
+    "api_specification": "OpenAPI 3.0.3 (Contract-First)",
+    "rationale": "1. Ưu tiên tuyệt đối theo sở trường của Tech Lead: Python/FastAPI và React Native/TypeScript.\n2. FastAPI cho hiệu năng IO bất đồng bộ xuất sắc, sinh OpenAPI docs tự động từ Pydantic.\n3. PostgreSQL 15+ đảm bảo toàn vẹn dữ liệu ACID và bảo vệ giao dịch đặt hàng."
+  },
+  "quality_metrics": {
+    "unit_test_passed": true,
+    "coverage_score": "88.5%",
+    "security_vulnerabilities": 0,
+    "gates_passed": [
+      "Gate 1: PRD Approval",
+      "Gate 2: Architecture Sign-off",
+      "Gate 3: Production Deploy Sign-off"
+    ]
+  },
+  "included_artifacts": [
+    "PRD",
+    "user_stories",
+    "clarification_qna",
+    "ui_ux_specs",
+    "architecture_design",
+    "openapi",
+    "erd",
+    "security_architecture",
+    "tasks_dag",
+    "backend_source",
+    "frontend_source",
+    "infra_source",
+    "code_review_report",
+    "security_audit_report",
+    "test_summary",
+    "client_handover_package",
+    "uat_checklist",
+    "user_manual",
+    "project_readme"
+  ]
+}

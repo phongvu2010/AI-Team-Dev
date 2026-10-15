@@ -126,6 +126,16 @@ AI Team Dev/
 ├── .dockerignore                                  # Tối ưu hóa build context Docker
 ├── .env.example                                   # Biến môi trường mẫu cho DB, API, Frontend
 ├── .gitignore                                     # Bỏ qua bytecode, node_modules, cache
+├── config/                                        # Hồ sơ khẩu vị kiến trúc & tiêu chuẩn review Tech Lead
+│   └── tech_lead_profile.yaml                     # Cấu hình tiêu chuẩn review, stack & guardrails
+├── examples/                                      # Kho dự án mẫu tham chiếu kiến trúc chuẩn (Golden Reference)
+│   └── motocare_reference/                        # Tham chiếu Clean Architecture, FastAPI repo, React Native
+├── scripts/                                       # Bộ công cụ tự động hóa Day-0 & Release
+│   ├── smoke_test.py                              # Smoke test tự động 5 tầng 1-click
+│   ├── bundle_release.py                          # Đóng gói zip, manifest, UAT checklist & manual
+│   ├── setup_frontend.py                          # Chuyển đổi Web Next.js 15 / Vite / Mobile Expo
+│   ├── verify_contracts.py                        # Kiểm tra đồng bộ schema 3 tầng
+│   └── verify_migrations.py                       # Kiểm tra toàn vẹn Alembic migrations
 ├── .agents/
 │   ├── agents/                                    # Định nghĩa 7 Subagents chuyên biệt kèm Guardrails
 │   │   ├── ba.md
@@ -140,9 +150,10 @@ AI Team Dev/
 │       │   ├── SKILL.md
 │       │   └── resources/                         # Bộ mẫu hồ sơ bàn giao chuẩn hóa
 │       │       ├── prd-template.md                # Template đặc tả nghiệp vụ PRD
-│       │       ├── plan-template.md               # Template kế hoạch & Data Contract Matrix
+│       │       ├── plan-template.md               # Template kế hoạch & Data Contract Matrix (kèm STRIDE)
 │       │       ├── test-report-template.md        # Template báo cáo QA & Structured Bug Tickets
 │       │       └── review-report-template.md      # Template thẩm định & Quality Scorecard
+│       ├── threat-modeling/SKILL.md               # Kỹ năng phân tích rủi ro STRIDE & OWASP API Top 10
 │       ├── ba-requirements/SKILL.md
 │       ├── db-sqlalchemy-alembic/SKILL.md
 │       ├── backend-fastapi/SKILL.md
@@ -207,3 +218,35 @@ Bạn có thể tận dụng các **Slash Commands** trực tiếp trên khung c
 - *"Nhờ `qa-tester` kiểm tra lint và chạy lại pytest cho tầng backend."*
 - *"Nhờ `code-reviewer` review các thay đổi mới nhất qua git diff."*
 
+---
+
+## 📦 Bộ Đóng Gói Bàn Giao & An Toàn Doanh Nghiệp (Enterprise Tooling)
+
+Template đã được tích hợp bộ công cụ hỗ trợ hoàn thiện sản phẩm theo chuẩn doanh nghiệp:
+
+### 1. Đóng Gói Thành Phẩm Tự Động (`scripts/bundle_release.py`)
+Khi hoàn thành một tính năng hoặc sẵn sàng phát hành phiên bản mới, chạy lệnh:
+```bash
+# Đóng gói release cho tính năng cụ thể
+python scripts/bundle_release.py <feature-slug> --version 1.0.0
+
+# Hoặc đóng gói toàn bộ hệ thống
+python scripts/bundle_release.py --version 1.0.0
+```
+Script sẽ tự động:
+- Kiểm tra tính toàn vẹn của mã nguồn qua `smoke_test.py`.
+- Sinh hồ sơ phát hành `RELEASE_MANIFEST.json` kèm Git commit hash và tech stack.
+- Tạo bảng kiểm nghiệm thu người dùng cuối `UAT_ACCEPTANCE_CHECKLIST.md`.
+- Tạo tài liệu hướng dẫn vận hành & triển khai `USER_MANUAL.md`.
+- Đóng gói toàn bộ mã nguồn sạch và tài liệu vào file nén `.zip` trong `dist/releases/` kèm mã băm SHA-256.
+
+### 2. Mô Hình Mối Đe Dọa STRIDE & Phòng Chống OWASP API Top 10
+- **Kỹ năng chuyên sâu**: [`.agents/skills/threat-modeling/SKILL.md`](.agents/skills/threat-modeling/SKILL.md).
+- **Security by Design**: [`planner`](.agents/agents/planner.md) bắt buộc thiết lập bảng phân tích STRIDE và Ma Trận Phân Quyền RBAC / Object-Level Ownership (chống lỗi BOLA) trong `plan.md`.
+- **Security Audit**: [`code-reviewer`](.agents/agents/code-reviewer.md) tự động quét lỗ hổng SQLi, Hardcoded Secrets, BOLA và DoS rate limiting trước khi cấp phép commit.
+
+### 3. Tùy Biến Tiêu Chuẩn Tech Lead (`config/tech_lead_profile.yaml`)
+Bạn có thể tùy chỉnh khẩu vị công nghệ, tiêu chuẩn review và ngưỡng chấp thuận chất lượng tại [`config/tech_lead_profile.yaml`](config/tech_lead_profile.yaml). Các Subagents sẽ tự động điều chỉnh hành vi theo cấu hình này.
+
+### 4. Kho Tham Chiếu Kiến Trúc Mẫu (Golden Reference)
+Thư mục [`examples/motocare_reference/`](examples/motocare_reference/) cung cấp một ứng dụng mẫu hoàn chỉnh (FastAPI Clean Architecture, SQLAlchemy 2.0 Repositories, React Native TypeScript Client, Alembic Migrations) làm chuẩn mực đối chiếu cho các Dev Squads.

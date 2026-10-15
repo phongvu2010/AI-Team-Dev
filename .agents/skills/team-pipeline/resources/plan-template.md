@@ -126,6 +126,27 @@ export const MOCK_<RESOURCE>S: <Resource>[] = [
 ];
 ```
 
+### 4.4. Bảo Mật, Phân Quyền RBAC & STRIDE Threat Modeling
+> Tham chiếu chi tiết kỹ năng: [`.agents/skills/threat-modeling/SKILL.md`](../../threat-modeling/SKILL.md)
+
+#### Bảng Phân Tích Mối Đe Dọa STRIDE:
+| Ký Hiệu | Mối Đe Dọa | Kịch Bản Rủi Ro | Biện Pháp Khắc Phục (Mitigation) |
+| :---: | :--- | :--- | :--- |
+| **S** | Spoofing | Giả mạo token / người dùng khác | JWT HS256/RS256, Verify Signature & Exp, Passwords hashed bằng Bcrypt/Argon2id |
+| **T** | Tampering | Can thiệp thay đổi payload trái phép | SQLAlchemy 2.0 Parameterized Queries (chống SQLi), Pydantic v2 type enforcement |
+| **R** | Repudiation | Chối bỏ giao dịch quan trọng | Ghi Audit Log bất biến kèm User ID, IP, Action và Timestamp UTC |
+| **I** | Info Disclosure | Rò rỉ dữ liệu nhạy cảm | Schemas ẩn hoàn toàn `password_hash`, ẩn stack traces khi lỗi, mask PII logs |
+| **D** | Denial of Service | Gửi request dồn dập làm sập hệ thống | Giới hạn phân trang tối đa 100 items, `max_length` trên string fields, Rate Limiting |
+| **E** | Elevation of Privilege | User thường can thiệp tài nguyên người khác | Kiểm tra quyền sở hữu Object-Level (BOLA protection): `owner_id == current_user.id` |
+
+#### Ma Trận Phân Quyền & Quyền Sở Hữu (RBAC & Ownership):
+| Tài Nguyên (Resource) | Hành Động | Role: Anonymous | Role: User | Role: Admin | Ràng Buộc Sở Hữu (Ownership Rule) |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| `<resource>` | `GET /` (List) | ALLOW / DENY | ALLOW | ALLOW | Giới hạn theo tenant hoặc phân trang |
+| `<resource>` | `POST /` (Create) | DENY | ALLOW | ALLOW | Tự động gán `created_by = current_user.id` |
+| `<resource>` | `GET /{id}` | ALLOW / DENY | ALLOW | ALLOW | Phải thuộc sở hữu hoặc công khai |
+| `<resource>` | `PUT/DELETE /{id}`| DENY | ALLOW (Own) | ALLOW | Bắt buộc `item.user_id == current_user.id` |
+
 ---
 
 ## 5. UI & State Architecture — Thiết kế Giao diện (`frontend-dev` — Đích: `src/frontend/`)

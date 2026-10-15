@@ -53,21 +53,26 @@ Trước khi bất kỳ dòng code tính năng nào được viết, bạn có t
 - Chuẩn hóa thông báo lỗi: `{"detail": "..."}` cho các mã `400`, `401`, `403`, `404`, `409`, `422`.
 - Cung cấp **Wave 1 Mock Fixtures** tại `src/frontend/src/lib/api/mocks/` để frontend phát triển độc lập.
 
-### 5. Thiết Kế UI Architecture (`src/frontend/` & `src/mobile/` — `frontend-dev`):
+### 5. Thiết Kế Bảo Mật STRIDE & Ma Trận Phân Quyền RBAC (Security by Design):
+- Tham chiếu kỹ năng [`.agents/skills/threat-modeling/SKILL.md`](../skills/threat-modeling/SKILL.md).
+- Thiết lập bảng phân tích rủi ro STRIDE (Spoofing, Tampering, Repudiation, Info Disclosure, DoS, Elevation of Privilege) cho feature.
+- Xây dựng **Ma Trận Phân Quyền RBAC & Quyền Sở Hữu (BOLA / Ownership Rules)**: Xác định rõ quyền thao tác CRUD của từng role đối với từng tài nguyên để `backend-dev` áp dụng Dependency Injection kiểm tra quyền chuẩn xác.
+
+### 6. Thiết Kế UI Architecture (`src/frontend/` & `src/mobile/` — `frontend-dev`):
 - Xác định rõ Framework Profile được chỉ định từ PRD:
   - **Next.js 15 (App Router)**: Server vs Client Components (`"use client"`), dynamic routes, streaming suspense.
   - **React Vite (SPA)**: Client components, Vite configuration, SPA routing.
   - **React Native (Expo + NativeWind)**: Expo Router (`app/`), NativeWind (`className`), Safe Area, Touch handlers.
 - Quy chuẩn xử lý trọn vẹn **4 trạng thái UI**: `Loading` (skeleton/spinner), `Error` (alert + retry), `Empty` (CTA), `Success` (data display + A11y / Native responsive).
 
-### 6. Thiết Lập Ma Trận Truy Xuất Yêu Cầu (Acceptance Criteria & Test Matrix):
+### 7. Thiết Lập Ma Trận Truy Xuất Yêu Cầu (Acceptance Criteria & Test Matrix):
 - Ánh xạ trực tiếp từ các tiêu chí nghiệm thu nghiệp vụ (`BAC-xx`) và yêu cầu chức năng (`FR-xx`) trong `prd.md` sang mã tiêu chí kỹ thuật (`AC-01`, `AC-02`) và mã test case tương ứng (`TC-01`, `TC-02`) cho QA.
 - Đảm bảo 100% các Business Rules (`BR-xx`) và Edge Cases (`EC-xx`) được bao phủ bởi ít nhất một test case kỹ thuật.
 
-### 7. Xuất Bản Artifact:
+### 8. Xuất Bản Artifact:
 - Ghi toàn bộ nội dung kèm Header Metadata chuẩn vào `docs/specs/<feature-slug>/plan.md`. Báo cáo tóm tắt ngắn gọn cho Tech Lead Orchestrator.
 
-### 8. Cập Nhật Hợp Đồng Khi Nhận Yêu Cầu Điều Chỉnh (Reverse Contract Sync):
+### 9. Cập Nhật Hợp Đồng Khi Nhận Yêu Cầu Điều Chỉnh (Reverse Contract Sync):
 - Khi nhận yêu cầu điều chỉnh từ Tech Lead sau vòng sửa lỗi (khi Dev Squad báo cáo `Contract Modified: TRUE`):
   - Tiến hành cập nhật lại các bảng ánh xạ và API spec trong `docs/specs/<feature-slug>/plan.md`.
   - Tăng số hiệu `version` trong YAML frontmatter (ví dụ `1.0.0` $\to$ `1.1.0`) và ghi chú tóm tắt thay đổi vào mục Revision History để bảo toàn vị thế Single Source of Truth.

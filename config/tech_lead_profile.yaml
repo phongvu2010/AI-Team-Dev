@@ -1,0 +1,54 @@
+# ==============================================================================
+# HỒ SƠ NĂNG LỰC & TIÊU CHUẨN REVIEW CỦA TECH LEAD (AI TEAM DEV)
+# ==============================================================================
+# File này định hình tiêu chuẩn kiến trúc, khẩu vị công nghệ và các rào chắn
+# chất lượng/an toàn mà Principal Code Reviewer (`code-reviewer`) và Planner
+# (`planner`) sẽ đối chiếu khi thẩm định mã nguồn trên Antigravity 2.0.
+
+tech_lead:
+  name: "Tech Lead & Principal Solution Reviewer"
+  role: "Architectural Overseer & Quality Gatekeeper"
+  
+  # Danh mục công nghệ ưu tiên cao nhất phục vụ cho Manual Review
+  familiar_stacks:
+    backend:
+      - "Python 3.11+ (FastAPI v0.110+)"
+      - "Pydantic v2 (ConfigDict(from_attributes=True))"
+      - "SQLAlchemy 2.0 (AsyncSession, selectinload, mapped_column)"
+      - "Alembic (Zero Schema Drift, alembic check)"
+    frontend_web:
+      - "Next.js 15 (App Router, React 19, Server & Client Components)"
+      - "React + Vite (TypeScript Strict Mode, Lucide Icons)"
+      - "Tailwind CSS (cn utility with clsx & tailwind-merge)"
+    frontend_mobile:
+      - "React Native (Expo SDK 51/52, Expo Router)"
+      - "NativeWind v4 (Tailwind CSS for Mobile)"
+      - "SafeAreaProvider & Universal API Client (getApiBaseUrl)"
+    database:
+      - "PostgreSQL 15+ / 16+ & Supabase (Transaction Pooler vs Session DDL)"
+      - "SQLite async in-memory (Isolated zero-dependency test fallback)"
+
+  # Định hướng kiến trúc bắt buộc (Architectural Preferences)
+  architectural_preference:
+    strategy: "clean_modular_monolith"
+    casing_convention: "uniform_snake_case" # Thống nhất 100% DB <-> Backend <-> Frontend
+    pattern: "Clean Layered Architecture (db.models -> db.repositories -> app.services -> app.api)"
+    cross_layer_matrix_required: true
+    zero_contract_drift_policy: true
+    min_unit_test_coverage: 80 # Tỷ lệ độ phủ test tối thiểu để Pass
+
+# Quy chuẩn an toàn thông tin & bảo mật (Security Guardrails)
+security_guardrails:
+  enforce_stride_threat_modeling: true
+  zero_hardcoded_credentials: true # Cấm tuyệt đối API keys / passwords / secrets trong source
+  secure_password_hashing: "bcrypt_or_argon2id"
+  require_parameterized_queries: true # Bắt buộc dùng ORM / parameterized queries, cấm string concat SQL
+  enforce_bola_ownership_check: true # Broken Object Level Authorization (kiểm tra owner_id == current_user.id)
+  enforce_auth_rate_limiting: true # Bắt buộc rate limiting trên /login, /register
+  mask_pii_in_logs: true # Làm sạch email, phone, token trong log
+
+# Ngưỡng chấp thuận tại Cổng Chất Lượng (Quality Gate Thresholds)
+review_thresholds:
+  max_critical_findings_allowed: 0 # Có bất kỳ lỗi CRITICAL nào -> CHANGES_REQUESTED
+  max_major_findings_allowed: 0    # Có bất kỳ lỗi MAJOR nào -> CHANGES_REQUESTED
+  max_retry_loops: 3               # Tối đa 3 vòng lặp Review-Fix (Circuit Breaker ngắt mạch)

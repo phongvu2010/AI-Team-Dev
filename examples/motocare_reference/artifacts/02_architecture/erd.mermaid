@@ -1,0 +1,24 @@
+erDiagram
+    USERS ||--o{ ORDERS : places
+    USERS {
+        uuid id PK
+        string phone_number UK
+        string password_hash
+        string full_name
+        string role
+    }
+    CATALOG_ITEMS ||--o{ ORDER_ITEMS : contains
+    CATALOG_ITEMS {
+        uuid id PK
+        string name
+        decimal price
+        int stock_quantity
+    }
+    ORDERS ||--|{ ORDER_ITEMS : includes
+    ORDERS {
+        uuid id PK
+        uuid user_id FK
+        datetime scheduled_time
+        string status
+        decimal total_amount
+    }
