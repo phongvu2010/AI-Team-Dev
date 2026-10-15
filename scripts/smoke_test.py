@@ -86,17 +86,24 @@ def main() -> int:
         (1, "Python Linting (Ruff)", [py_exe, "-m", "ruff", "check", "src/"]),
         (2, "Cross-Layer Contract Verification", [py_exe, str(ROOT_DIR / "scripts" / "verify_contracts.py")]),
         (3, "Alembic Migration & DAG Integrity Verification", [py_exe, str(ROOT_DIR / "scripts" / "verify_migrations.py")]),
-        (4, "Backend & DB Automated Tests (Pytest SQLite In-Memory)", [py_exe, "-m", "pytest", "src/backend/tests", "src/db/tests", "-v"]),
+        (4, "Backend & DB Automated Tests with Coverage", [py_exe, "-m", "pytest", "src/backend/tests", "src/db/tests", "--cov=backend.app", "--cov-report=term-missing", "-v"]),
     ]
 
-    # Frontend Web step
     is_windows = platform.system() == "Windows"
+
+    # Frontend E2E Simulation step
+    node_cmd = "node.exe" if is_windows else "node"
+    e2e_script = ROOT_DIR / "src" / "frontend" / "scripts" / "run_e2e_tests.cjs"
+    if e2e_script.exists():
+        steps.append((5, "Frontend Headless E2E & User Journey Simulation", [node_cmd, str(e2e_script)]))
+
+    # Frontend Web step
     npm_cmd = "npm.cmd" if is_windows else "npm"
-    steps.append((5, "Web Frontend TypeScript Typecheck (Strict Mode)", [npm_cmd, "--prefix", "src/frontend", "run", "typecheck"]))
+    steps.append((6, "Web Frontend TypeScript Typecheck (Strict Mode)", [npm_cmd, "--prefix", "src/frontend", "run", "typecheck"]))
 
     # Optional Mobile step if node_modules are installed
     if (ROOT_DIR / "src" / "mobile" / "node_modules").exists():
-        steps.append((6, "Mobile App TypeScript Typecheck (React Native / Expo)", [npm_cmd, "--prefix", "src/mobile", "run", "typecheck"]))
+        steps.append((7, "Mobile App TypeScript Typecheck (React Native / Expo)", [npm_cmd, "--prefix", "src/mobile", "run", "typecheck"]))
 
     all_passed = True
     for step_num, title, cmd in steps:

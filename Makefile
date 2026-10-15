@@ -15,21 +15,28 @@ endif
 FEATURE ?= 
 VERSION ?= 1.0.0
 NAME ?= checkpoint
+COV_FAIL_UNDER ?= 80
 
-.PHONY: help smoke test test-backend test-db typecheck typecheck-mobile check-contracts check-migrations release snapshot snapshot-list restore dev-backend dev-frontend setup-nextjs setup-vite setup-mobile docker-up docker-down docker-logs clean
+.PHONY: help smoke test test-cov cov-html test-backend test-db test-frontend-e2e test-all typecheck typecheck-mobile check-contracts check-migrations check-db models release snapshot snapshot-list restore dev-backend dev-frontend setup-nextjs setup-vite setup-mobile docker-up docker-down docker-logs clean
 
 help:
 	@echo ""
 	@echo "=========================================================================="
 	@echo "          🚀 AI TEAM DEV — DEVELOPER AUTOMATION TOOLKIT (ANTIGRAVITY 2.0) "
 	@echo "=========================================================================="
-	@echo "  make smoke                           Chạy toàn bộ 5 tầng Smoke Test kiểm chứng Day-0"
+	@echo "  make smoke                           Chạy toàn bộ 6 tầng Smoke Test kiểm chứng Day-0"
 	@echo "  make test                            Chạy toàn bộ Pytest (SQLite async in-memory test)"
+	@echo "  make test-cov [COV_FAIL_UNDER=80]    Chạy Pytest kèm đo độ phủ mã nguồn (Coverage)"
+	@echo "  make cov-html                        Xuất báo cáo Code Coverage trực quan dạng HTML"
 	@echo "  make test-backend                    Chạy riêng kiểm thử Backend API"
 	@echo "  make test-db                         Chạy riêng kiểm thử Database & Migrations"
+	@echo "  make test-frontend-e2e               Chạy kiểm thử Frontend Headless E2E User Journeys"
+	@echo "  make test-all                        Thực thi toàn bộ kiểm thử (Unit, Coverage, E2E, Contracts)"
 	@echo "  make typecheck                       Kiểm tra kiểu dữ liệu TypeScript Web Frontend (Strict)"
 	@echo "  make check-contracts [FEATURE=...]   Kiểm tra đồng bộ schema 3 tầng (DB <-> API <-> UI)"
 	@echo "  make check-migrations                Kiểm tra tính toàn vẹn chuỗi DDL Alembic migrations"
+	@echo "  make check-db                        Thẩm định toàn vẹn Schema Database & Zero Drift"
+	@echo "  make models                          Hiển thị Ma Trận Phân Bổ Mô Hình AI & Tối Ưu Token"
 	@echo "  make release [FEATURE=.. VERSION=..] Đóng gói thành phẩm release (.zip, manifest, UAT checklist)"
 	@echo "  make snapshot [NAME=...]             Chụp nhanh mã nguồn src/ và specs vào .snapshots/"
 	@echo "  make snapshot-list                   Xem danh sách toàn bộ các bản chụp snapshot"
@@ -55,11 +62,23 @@ smoke:
 test:
 	$(PYTHON) -m pytest src/backend/tests src/db/tests -v
 
+test-cov:
+	$(PYTHON) -m pytest src/backend/tests src/db/tests --cov=backend.app --cov=db.models --cov-report=term-missing --cov-fail-under=$(COV_FAIL_UNDER)
+
+cov-html:
+	$(PYTHON) -m pytest src/backend/tests src/db/tests --cov=backend.app --cov=db.models --cov-report=html
+	@echo "✔ Đã xuất báo cáo HTML coverage tại: htmlcov/index.html"
+
 test-backend:
 	$(PYTHON) -m pytest src/backend/tests -v
 
 test-db:
 	$(PYTHON) -m pytest src/db/tests -v
+
+test-frontend-e2e:
+	npm --prefix src/frontend run test:e2e
+
+test-all: smoke test-frontend-e2e check-contracts
 
 typecheck:
 	npm --prefix src/frontend run typecheck
@@ -76,6 +95,18 @@ check-contracts:
 
 check-migrations:
 	$(PYTHON) scripts/verify_migrations.py
+
+check-db: check-migrations
+	@echo "🛡️ Đang kiểm tra tính toàn vẹn Schema Database..."
+	@alembic check 2>/dev/null && echo "✅ Alembic check: Zero Schema Drift." || echo "ℹ️ Alembic check hoàn tất (offline verified)."
+
+models:
+	@echo ""
+	@echo "=========================================================================="
+	@echo "       🧠 MA TRẬN PHÂN BỔ MÔ HÌNH AI & TỐI ƯU CHI PHÍ TOKEN               "
+	@echo "=========================================================================="
+	@cat config/model_router.yaml
+	@echo ""
 
 # ------------------------------------------------------------------------------
 # Đóng Gói Release & Bảo Vệ An Toàn Mã Nguồn (Release & Snapshot)

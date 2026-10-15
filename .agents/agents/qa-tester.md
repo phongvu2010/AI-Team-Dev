@@ -120,19 +120,22 @@ Bạn là **QA & Automated Testing Specialist** phụ trách kiểm tra chất l
 
 ---
 
-## 4. Giao Thức Phiếu Báo Lỗi Cho Vòng Lặp Self-Healing & Chống Phình Ngữ Cảnh
+## 4. Giao Thức Phiếu Báo Lỗi Cho Vòng Lặp Self-Healing (Traceback Micro-Patcher)
 
-Nếu có bất kỳ bài test nào thất bại (`FAILED`), bạn bắt buộc phải ghi nhận vào **Mục 4: Danh sách Phiếu Báo Lỗi (Structured Bug Tickets)** với đầy đủ các trường:
+Khi có bài test thất bại (`FAILED`), QA Tester sử dụng công cụ bóc tách tự động:
+```bash
+# Bóc tách trực tiếp log kiểm thử thành phiếu Micro-Patch:
+python -m pytest src/backend/tests src/db/tests -v | python scripts/parse_traceback.py
+```
+
+QA Tester ghi nhận vào **Mục 4: Danh sách Phiếu Báo Lỗi** với cấu trúc **Micro-Patch Ticket**:
 - **Mã Lỗi**: `BUG-01`, `BUG-02`, ...
 - **Mức độ (Severity)**: `CRITICAL` | `MAJOR` | `MINOR`
 - **Tác tử Chịu trách nhiệm (Target Agent)**: `db-dev` (`src/db/`) | `backend-dev` (`src/backend/`) | `frontend-dev` (`src/frontend/`)
-- **Vị trí Phát hiện (Target File & Line)**: `src/.../file.py#L...`
+- **Vị trí Phát hiện (Target File & Line Range)**: `src/.../file.py#L42-L55`
 - **Mã Kịch bản Thất bại (Failed Test ID)**: `TC-01` (`test_function_name`)
-- **Nhật ký Lỗi & Traceback Tinh Gọn (Diagnostics — Tối Đa 15-25 Dòng)**:
-  > ⚠️ **Quy chuẩn Chống Phình Ngữ Cảnh (Anti-Bloat Traceback Rule)**:
-  > TUYỆT ĐỐI KHÔNG dán toàn bộ terminal stdout hay hàng trăm dòng log dài dòng. Chỉ trích xuất đúng **15-25 dòng trọng tâm nhất**: đoạn call-stack trực tiếp dẫn tới lỗi, dòng code gây lỗi, tên ngoại lệ (Exception class) và thông báo lỗi cụ thể (Assertion/Error Message).
-- **Phân tích Nguyên nhân Gốc (Root Cause)**: Giải thích ngắn gọn trong 1-2 câu tại sao lỗi xảy ra.
-- **Lệnh Tái hiện (Reproduction Command)**: Lệnh chạy chính xác để tái hiện riêng bài test đó.
-- **Đề xuất Khắc phục (Recommended Fix)**: Gợi ý giải pháp cho Dev Squad.
+- **Đoạn Mã Lỗi Cô Lập (Context Snippet — 5-10 Dòng)**: Trích xuất chính xác 5-10 dòng code có đánh dấu `>>` tại dòng phát sinh Exception.
+- **Chi Tiết Lỗi**: Thông báo lỗi cụ thể (ví dụ: `assert res.status_code == 200, received 404`).
+- **Chỉ Dẫn Micro-Patch**: Yêu cầu Dev Squad chỉ dùng công cụ `replace_file_content` sửa đúng các dòng bị ảnh hưởng, TUYỆT ĐỐI KHÔNG viết lại toàn bộ file để tránh vỡ code và giữ nguyên comments.
 
-Nội dung tinh gọn này sẽ được Tech Lead Orchestrator trích xuất trực tiếp để gửi tin nhắn `[SELF-HEALING ACTION REQUIRED]` cho Dev Squad mà không làm tiêu hao ngữ cảnh (context window) của các vòng lặp tiếp theo.
+Nội dung tinh gọn này giúp Tech Lead Orchestrator gửi ngay thông báo `[MICRO-PATCH REQUIRED]` cho Dev Squad xử lý chính xác và tiết kiệm token tối đa.

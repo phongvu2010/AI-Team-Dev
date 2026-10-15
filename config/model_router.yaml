@@ -1,6 +1,6 @@
 # ==============================================================================
-# CẤU HÌNH PHÂN BỔ MÔ HÌNH AI & TỐI ƯU CHI PHÍ TOKEN (MODEL ROUTER MATRIX)
-# Hệ thống AI Team Dev trên nền tảng Google Antigravity 2.0
+# CẤU HÌNH ĐỊNH TUYẾN MÔ HÌNH AI & TỐI ƯU HÓA TOKEN (MODEL ROUTER MATRIX)
+# Antigravity 2.0 Multi-Agent Matrix Dev Team (AI-Team-Dev)
 # ==============================================================================
 
 tiers:
@@ -8,94 +8,87 @@ tiers:
     default_model: "gemini-2.5-pro"
     nextgen_model: "gemini-3.8-pro"
     env_override_key: "GEMINI_PRO_MODEL"
+    description: "Mô hình nhận thức bậc cao (High-reasoning): Thiết kế kiến trúc phân tầng, phân tích bảo mật STRIDE/OWASP, ma trận dữ liệu 3 tầng và Code Review chuyên sâu."
     relative_cost_factor: 5.0
-    description: >
-      Tư duy nhận thức bậc cao, suy luận logic phức tạp, bóc tách phạm vi nghiệp vụ,
-      thiết kế kiến trúc hệ thống, phân tích rủi ro an toàn STRIDE và thẩm định Code Review.
     recommended_tasks:
-      - "Phỏng vấn người dùng, bóc tách Epic, phát hiện điểm mù nghiệp vụ (ba)"
-      - "Thiết kế kiến trúc Cross-Layer Contract Matrix, STRIDE Threat Modeling (planner)"
-      - "Thẩm định kiến trúc qua git diff, kiểm soát N+1 query, rà soát OWASP Top 10 (code-reviewer)"
+      - "Lập kế hoạch kỹ thuật & Ma trận ánh xạ dữ liệu 3 tầng (planner)"
+      - "Code Review chuyên sâu & Thẩm định an ninh OWASP Top 10 (code-reviewer)"
+      - "Phân tích mô hình đe dọa STRIDE & Ma trận RBAC"
+      - "Khắc phục các lỗi logic nghiệp vụ phức tạp (backend-dev deep refactor)"
 
   flash:
     default_model: "gemini-2.5-flash"
     nextgen_model: "gemini-3.8-flash"
     env_override_key: "GEMINI_FLASH_MODEL"
+    description: "Cân bằng tối ưu giữa tốc độ siêu tốc, độ chuẩn xác cấu trúc và chi phí tiết kiệm. Sẵn sàng cho Gemini 3.8 Flash."
     relative_cost_factor: 1.0
-    description: >
-      Tốc độ phản hồi cực nhanh, độ chính xác cú pháp cao, sinh mã nguồn tuân thủ hợp đồng,
-      thực thi kiểm thử tự động và vòng lặp tự sửa lỗi (Self-Healing).
     recommended_tasks:
-      - "Lập trình SQLAlchemy 2.0 models, repositories, Alembic migrations (db-dev)"
-      - "Lập trình FastAPI routers, Pydantic v2 schemas, business services (backend-dev)"
-      - "Lập trình Next.js / Vite / Expo components, 4 UI states, Tailwind CSS (frontend-dev)"
-      - "Điều phối linter, kiểm tra hợp đồng, chạy test suite (qa-tester)"
+      - "Phỏng vấn người dùng & Bóc tách PRD + Gherkin BDD Scenarios (ba)"
+      - "Lập trình Database Models, Repositories & Alembic Migrations (db-dev)"
+      - "Lập trình Giao diện Web Next.js/Vite & Mobile React Native (frontend-dev)"
+      - "Lập trình REST API FastAPI & Pydantic v2 (backend-dev)"
+      - "Điều phối kiểm thử Pytest, đo độ phủ và bóc tách lỗi micro-patch (qa-tester)"
 
   flash_lite:
     default_model: "gemini-2.5-flash-lite"
     nextgen_model: "gemini-3.8-flash-lite"
     env_override_key: "GEMINI_FLASH_LITE_MODEL"
+    description: "Tốc độ xử lý tức thì, chi phí token tối thiểu (-90% vs Pro), chuyên trách tổng hợp tài liệu và quét cú pháp."
     relative_cost_factor: 0.25
-    description: >
-      Tối thiểu hóa chi phí token, xử lý siêu tốc các tác vụ tổng hợp tài liệu,
-      đóng gói manifest phát hành và quét regex tĩnh.
     recommended_tasks:
-      - "Tổng hợp tài liệu phát hành, UAT checklist, User Manual"
-      - "Quét regex khóa bí mật (Secret Scanner)"
-      - "Format changelog và release notes"
+      - "Lập bảng kiểm thử nghiệm thu người dùng cuối (UAT_CHECKLIST.md)"
+      - "Soạn thảo cẩm nang vận hành (USER_MANUAL.md)"
+      - "Đóng gói Release Manifest và tính mã băm SHA-256 (bundle_release.py)"
+      - "Quét tĩnh regex bí mật (secret-scanner)"
+      - "Định dạng và kiểm tra linter cú pháp"
 
-# ------------------------------------------------------------------------------
-# Phân bổ mô hình chuẩn cho 7 Subagents chuyên trách của AI Team Dev
-# ------------------------------------------------------------------------------
-subagents:
+# Phân bổ chi tiết theo từng Tác tử Chuyên trách (Subagents)
+agents:
   ba:
-    tier: "pro"
-    default_model: "gemini-2.5-pro"
-    env_override: "BA_MODEL"
-    rationale: "Cần khả năng suy luận nhạy bén để phát hiện điểm mù, mâu thuẫn yêu cầu và phỏng vấn người dùng có cấu trúc qua ask_question."
+    name: "Business Analyst & Requirements Engineer"
+    default_tier: "flash"
+    recommended_model: "gemini-2.5-flash"
+    env_override_key: "BA_MODEL"
+    rationale: "Bóc tách PRD, phỏng vấn tương tác và sinh Gherkin BDD kịch bản mẫu cần tốc độ nhanh và cấu trúc JSON chuẩn."
 
   planner:
-    tier: "pro"
-    default_model: "gemini-2.5-pro"
-    env_override: "PLANNER_MODEL"
-    rationale: "Trọng tâm kiến trúc: Thiết lập Data Contract Matrix 3 tầng, phân tích STRIDE và ma trận phân quyền RBAC/BOLA đòi hỏi tính nhất quán cao nhất."
+    name: "System Architect & Technical Planner"
+    default_tier: "pro"
+    recommended_model: "gemini-2.5-pro"
+    env_override_key: "PLANNER_MODEL"
+    rationale: "Thiết kế kiến trúc hệ thống, ma trận dữ liệu 3 tầng (DB <-> API <-> UI) và phòng chống drift đòi hỏi tư duy kiến trúc bậc cao."
 
   db-dev:
-    tier: "flash"
-    default_model: "gemini-2.5-flash"
-    env_override: "DB_DEV_MODEL"
-    rationale: "Tuân thủ chặt chẽ schema DB đã định nghĩa trong plan.md; Flash đạt tốc độ tối đa và chi phí tối thiểu."
-
-  backend-dev:
-    tier: "flash"
-    default_model: "gemini-2.5-flash"
-    complex_tier: "pro"
-    env_override: "BACKEND_DEV_MODEL"
-    rationale: "Chuyển hóa API contract sang FastAPI và Pydantic v2; dùng Flash làm mặc định, tự động nâng cấp Pro khi có thuật toán phức tạp."
+    name: "Database Engineer (PostgreSQL / SQLAlchemy)"
+    default_tier: "flash"
+    recommended_model: "gemini-2.5-flash"
+    env_override_key: "DB_DEV_MODEL"
+    rationale: "Xây dựng schema SQLAlchemy 2.0 và Alembic migrations tuân thủ chặt chẽ theo plan.md, mô hình Flash cho kết quả nhanh và chính xác."
 
   frontend-dev:
-    tier: "flash"
-    default_model: "gemini-2.5-flash"
-    env_override: "FRONTEND_DEV_MODEL"
-    rationale: "Dựng giao diện Next.js / Vite / React Native Expo theo 4 trạng thái UI và Tailwind CSS; Flash xử lý UI components siêu tốc."
+    name: "Frontend & Mobile Engineer (Next.js / Vite / Expo)"
+    default_tier: "flash"
+    recommended_model: "gemini-2.5-flash"
+    env_override_key: "FRONTEND_DEV_MODEL"
+    rationale: "Xây dựng UI screens, Tailwind CSS layouts, 4 UI states và API client typed theo OpenAPI contract."
+
+  backend-dev:
+    name: "Backend Engineer (FastAPI / Pydantic v2)"
+    default_tier: "pro"
+    recommended_model: "gemini-2.5-pro"
+    env_override_key: "BACKEND_DEV_MODEL"
+    rationale: "Triển khai async business logic, dependency injection, exception handling và kết nối DB an toàn."
 
   qa-tester:
-    tier: "flash"
-    default_model: "gemini-2.5-flash"
-    env_override: "QA_TESTER_MODEL"
-    rationale: "Chạy test cô lập, linter và vòng lặp Self-Healing tự sửa lỗi; cần tốc độ phản hồi tính bằng giây để duy trì nhịp Vibe Coding."
+    name: "QA & Testing Specialist"
+    default_tier: "flash"
+    recommended_model: "gemini-2.5-flash"
+    env_override_key: "QA_MODEL"
+    rationale: "Chạy Pytest, Jest/E2E runner, kiểm tra độ phủ >=80%, và bóc tách traceback thành micro-patch tickets."
 
   code-reviewer:
-    tier: "pro"
-    default_model: "gemini-2.5-pro"
-    env_override: "CODE_REVIEWER_MODEL"
-    rationale: "Chốt chặn chất lượng: Audit git diff, kiểm toán an toàn OWASP Top 10, phát hiện N+1 query và rà soát Type Safety."
-
-# ------------------------------------------------------------------------------
-# Chỉ số kinh tế Token (Token Economics)
-# ------------------------------------------------------------------------------
-token_economics:
-  cost_reduction_vs_all_pro: "65% - 75%"
-  strategy: >
-    Dồn ngân sách vào các điểm nghẽn nhận thức trọng yếu (BA, Architecture, Code Review)
-    và dùng Flash cho khâu sản xuất (Dev, QA Runner) giúp tối ưu cả tốc độ và chi phí.
+    name: "Principal Code Reviewer & Security Auditor"
+    default_tier: "pro"
+    recommended_model: "gemini-2.5-pro"
+    env_override_key: "CODE_REVIEW_MODEL"
+    rationale: "Đánh giá chất lượng mã nguồn qua git diff, thẩm định OWASP Top 10 và STRIDE Threat Model."

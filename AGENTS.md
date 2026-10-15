@@ -199,16 +199,21 @@ Chi tiết cấu trúc chuẩn của 4 artifacts:
 
 ## 5. Quy Trình Điều Phối 6 Giai Đoạn & Vòng Lặp Phản Hồi (Feedback Loop)
 
-Khi nhận yêu cầu tính năng từ người dùng, Tech Lead áp dụng **Dynamic Model Tiering** và điều phối 6 giai đoạn:
+Khi nhận yêu cầu tính năng từ người dùng, Tech Lead áp dụng **Ma Trận Định Tuyến Mô Hình & Tối Ưu Chi Phí Token (Model Router Matrix tại `config/model_router.yaml`)** và điều phối 6 giai đoạn:
+- **Tier PRO (`gemini-2.5-pro` / `gemini-3.8-pro`)**: Áp dụng cho `planner` và `code-reviewer` (tư duy kiến trúc & bảo mật bậc cao).
+- **Tier FLASH (`gemini-2.5-flash` / `gemini-3.8-flash`)**: Áp dụng cho `ba`, `db-dev`, `frontend-dev`, `backend-dev`, và `qa-tester` (tốc độ nhanh, tiết kiệm 60-70% token).
+- **Tier FLASH-LITE (`gemini-2.5-flash-lite`)**: Áp dụng cho đóng gói release, kiểm tra regex secret, và sinh UAT checklists.
 
-### Bước 0: Giai đoạn Requirements Elicitation, Feature Slicing & PRD (`ba` — `Model: "pro"`)
+### Bước 0: Giai đoạn Requirements Elicitation, Feature Slicing & PRD (`ba` — `Model: "flash"` / `env: BA_MODEL`)
 1. Gọi `invoke_subagent`:
-   - `TypeName`: `"ba"`, `Role`: `"Business Analyst & Requirements Engineer"`, `Model`: `"pro"`.
-   - *(Dùng Model Pro để đảm bảo tư duy phân tích nghiệp vụ sắc bén, phát hiện điểm mù, kịch bản góc và phỏng vấn người dùng có cấu trúc)*.
+   - `TypeName`: `"ba"`, `Role`: `"Business Analyst & Requirements Engineer"`, `Model`: `"flash"`.
+   - *(Dùng Model Flash với skill `gherkin-generator` và `ba-requirements` để bóc tách yêu cầu nhanh, chính xác và tiết kiệm chi phí)*.
 2. `ba` tiếp nhận prompt ban đầu từ người dùng, chủ động phát hiện các yêu cầu còn mơ hồ hoặc thiếu sót, và áp dụng **High-Leverage Interview & Feature Slicing Protocol**:
    - **Định cỡ & Bóc tách Quy mô Tính năng (Granular Feature Slicing)**:
      - Đánh giá kích cỡ yêu cầu: *Atomic Feature (Size S/M: 3-5 FRs, 1-2 DB models)* vs *Epic / Multi-Domain (Size L/XL: >5 FRs, luồng nghiệp vụ phức hợp)*.
      - Nếu phát hiện Epic lớn (ví dụ: E-commerce, Order Management, Core Banking): TUYỆT ĐỐI KHÔNG dồn toàn bộ vào 1 PRD. BA Agent chủ động phân rã Epic thành chuỗi Feature Slugs nguyên tử độc lập (ví dụ: `order-checkout` -> `order-payment` -> `order-fulfillment`), lập bảng **Ma Trận Bóc Tách Epic (Mục 1.3 PRD)** và đề xuất người dùng chọn lát cắt MVP đầu tiên (Phase 1 / P0) để thực thi cuốn chiếu.
+   - **Chuẩn Hóa Kịch Bản Kiểm Thử Hành Vi Gherkin BDD (`gherkin-generator`)**:
+     - Mọi User Story trong `prd.md` bắt buộc phải kèm theo kịch bản chuẩn Gherkin (`Given ... When ... Then ...`), bao gồm tối thiểu 1 Happy Path và 2 Edge/Error Paths. Điều này giúp `qa-tester` chuyển đổi 1:1 thành test cases mà không bị ảo giác.
    - **Giới hạn tối đa 1 đến 3 câu hỏi (P0)** qua công cụ `ask_question`: Chỉ tập trung vào ranh giới phạm vi MVP / lát cắt con ưu tiên (Scope Slicing), đối tượng tác nhân / quyền hạn người dùng (Personas & Permissions), hoặc quy tắc nghiệp vụ rẽ nhánh chính. Luôn gắn tiền tố `(Recommended)` vào lựa chọn khuyến nghị.
    - **Nguyên tắc phân tách (Separation of Concerns)**: TUYỆT ĐỐI KHÔNG hỏi vụn vặt về tiểu tiết (giao diện, styling, kỹ thuật edge case, tên cột DB). Mọi điểm chi tiết này, BA chủ động đưa ra đề xuất tối ưu trực tiếp vào bản thảo PRD.
 3. `ba` xuất bản tài liệu `docs/specs/<feature-slug>/prd.md` theo mẫu chuẩn [prd-template.md](.agents/skills/team-pipeline/resources/prd-template.md).
@@ -286,36 +291,36 @@ Khi nhận yêu cầu tính năng từ người dùng, Tech Lead áp dụng **Dy
 ### Bước 3: Giai đoạn Testing & Vòng Lặp Self-Healing (`qa-tester` — `Model: "flash"`)
 1. Gọi `invoke_subagent` với `TypeName: "qa-tester"`, `Model: "flash"`.
    *(Dùng Model Flash giúp chạy lệnh CLI nhanh gấp đôi và tiết kiệm 60% token budget)*.
-2. `qa-tester` thực thi kiểm tra 5 tầng toàn diện (khuyên dùng `python scripts/smoke_test.py` chạy 1-click tự động):
-   - Python Linting: `python -m ruff check src/`
-   - Cross-Layer Contract Verification: `python scripts/verify_contracts.py <feature-slug>`
-   - Migration DAG & Syntax Integrity: `python scripts/verify_migrations.py`
-   - Automated Tests (DB & Backend): `python -m pytest src/backend/tests src/db/tests -v`
-   - Frontend Typecheck: `npm --prefix src/frontend run typecheck`
+2. `qa-tester` thực thi kiểm tra **6 tầng toàn diện** (khuyên dùng `python scripts/smoke_test.py` chạy 1-click tự động):
+   - **Tầng 1: Python Linting**: `python -m ruff check src/`
+   - **Tầng 2: Cross-Layer Contract Sync**: `python scripts/verify_contracts.py <feature-slug>` (100% snake_case)
+   - **Tầng 3: Migration DAG & Zero Schema Drift**: `python scripts/verify_migrations.py` kết hợp `alembic check`
+   - **Tầng 4: Backend Automated Tests & Coverage**: `python -m pytest src/backend/tests src/db/tests --cov=backend.app --cov-report=term-missing -v` (Bắt buộc đạt ngưỡng `COV_FAIL_UNDER >= 80%`)
+   - **Tầng 5: Frontend Headless E2E Simulation**: `npm --prefix src/frontend run test:e2e` (Mô phỏng 5 kịch bản hành trình người dùng E2E, auth JWT và 4 trạng thái UI)
+   - **Tầng 6: Frontend TypeScript Strict Typecheck**: `npm --prefix src/frontend run typecheck`
 3. **Khởi Động Server & Kiểm thử Trực quan Giao diện 4 Trạng Thái UI (Visual Verification qua `/browser`)**:
    - Đối với các tính năng có giao diện Frontend (`src/frontend/` hoặc `src/mobile/`), QA Tester kiểm định trực quan 4 trạng thái giao diện: *Loading (Skeleton), Empty (Placeholder + CTA), Error (Alert + Retry), Success (Data render chuẩn)* và tính tương thích Responsive trên Desktop (1280px) & Mobile (375px).
    - Khởi động dev server bằng lệnh: `python scripts/start_dev.py` (hoặc kiểm tra cổng qua `python scripts/start_dev.py --check`).
    - Kích hoạt hoặc hướng dẫn User kích hoạt lệnh `/browser http://localhost:3000/<route>` trên chat để duyệt trực tiếp giao diện, chụp ảnh màn hình và ghi nhận kết quả vào **Mục 2.2 của `docs/specs/<feature-slug>/test-report.md`**.
 4. Xuất kết quả vào `docs/specs/<feature-slug>/test-report.md`.
-5. **Vòng lặp Tự sửa lỗi (Self-Healing Bug Fix Loop) & Bảo Toàn Ngữ Cảnh (Context Preservation)**:
+5. **Vòng lặp Tự sửa lỗi (Self-Healing Bug Fix Loop) & Traceback Micro-Patcher**:
    - Nếu `overall_status: FAILED`:
+     - **Tự động Bóc Tách Traceback (`scripts/parse_traceback.py`)**:
+       QA Tester hoặc Tech Lead chạy `pytest ... | python scripts/parse_traceback.py` để trích xuất chính xác file, dòng lỗi, đoạn mã 5-10 dòng và thông báo lỗi assertion cụ thể.
      - **Nguyên tắc Bảo toàn Ngữ cảnh**: Tech Lead **BẮT BUỘC sử dụng `send_message`** gửi thông điệp tới Conversation ID của squad tương ứng (`SQUAD_REGISTRY[target_agent]`).
      - **TUYỆT ĐỐI KHÔNG** gọi lệnh `invoke_subagent` tạo mới agent cho cùng squad trong vòng lặp Self-Healing. Việc tái sử dụng Conversation ID giúp Subagent duy trì 100% ngữ cảnh (working memory, context reasoning, file đã sửa, terminal history), giảm 70% token tiêu hao và sửa lỗi chuẩn xác hơn nhiều lần.
-     - *Ngoại lệ*: Chỉ khi `send_message` trả về lỗi (do agent đã bị terminated/crashed), Tech Lead mới gọi `invoke_subagent` khởi tạo agent mới kèm tóm tắt lịch sử lỗi.
-     - **Quy chuẩn Cắt tỉa Nhật ký Lỗi Chống Phình Ngữ Cảnh (Anti-Bloat Traceback Rule)**:
-       Tech Lead TUYỆT ĐỐI KHÔNG copy-paste toàn bộ output log của terminal hay hàng trăm dòng stdout. Chỉ trích xuất đúng **15-25 dòng trọng tâm nhất**: đoạn call-stack trực tiếp dẫn tới lỗi, dòng file & code bị lỗi, tên Exception và message assertion.
-     - **Giao thức Chuẩn [SELF-HEALING ACTION REQUIRED]**:
+     - **Giao thức Chuẩn [MICRO-PATCH REQUIRED]**:
        ```text
-       [SELF-HEALING ACTION REQUIRED]
+       [MICRO-PATCH REQUIRED]
        - Feature: <feature-slug>
        - Iteration: <iteration_number> / 3
        - Target Agent: db-dev (src/db/) | backend-dev (src/backend/) | frontend-dev (src/frontend/)
-       - Target File & Line: <đường_dẫn_file>#L...
+       - Target File & Line Range: <file_path>#L<start>-L<end>
        - Failed Test ID: <mã test case hoặc tên hàm test>
-       - Diagnostics & Traceback (Pruned 15-25 lines):
-         <chỉ dán 15-25 dòng traceback trọng tâm từ Mục 4 test-report.md>
-       - Reproduction Command: <lệnh chạy lại để tái hiện lỗi>
-       - Instructions: Phân tích nguyên nhân và khắc phục triệt để. TUYỆT ĐỐI chỉ chỉnh sửa trong thư mục được phân quyền của bạn. Sau khi hoàn tất và smoke test sạch sẽ, gửi báo cáo [FIX-COMPLETED] để tiến hành kiểm thử lại.
+       - Isolated Context Snippet:
+         <đoạn mã 5-10 dòng trích xuất từ scripts/parse_traceback.py>
+       - Failure Detail: <thông báo assertion cụ thể>
+       - Micro-Patch Guardrails: Chỉ sử dụng `replace_file_content` sửa chính xác 1-5 dòng code bị lỗi tại vị trí chỉ định. TUYỆT ĐỐI KHÔNG viết lại toàn bộ file. Giữ nguyên toàn bộ comment và docstrings.
        ```
      - Dev Squad sửa lỗi và phản hồi bằng thông điệp **[FIX-COMPLETED]** (bắt buộc khai báo cờ Contract Modified, tóm tắt súc tích trong 3-5 gạch đầu dòng):
        ```text
