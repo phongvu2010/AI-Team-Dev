@@ -121,17 +121,22 @@ AI Team Dev/
 ├── WORKFLOW.md                                    # Cẩm nang SOP 7 giai đoạn & bộ mẫu thông điệp Dispatch
 ├── TEMPLATE_GUIDE.md                              # Hướng dẫn chi tiết sử dụng template cho dự án mới
 ├── README.md                                      # Tổng quan dự án, kiến trúc & danh sách tác tử
+├── Makefile                                       # Bộ tự động hóa lệnh 1-chạm (make smoke, make test, make release)
+├── run.ps1                                        # Bộ tự động hóa 1-chạm cho Windows PowerShell (.\run.ps1 smoke)
 ├── pyproject.toml                                 # Khởi tạo dependencies & pytest pythonpath=["src"]
 ├── docker-compose.yml                             # Khởi chạy Full-Stack: PostgreSQL 16, FastAPI Backend & Next.js 15
 ├── .dockerignore                                  # Tối ưu hóa build context Docker
 ├── .env.example                                   # Biến môi trường mẫu cho DB, API, Frontend
 ├── .gitignore                                     # Bỏ qua bytecode, node_modules, cache
-├── config/                                        # Hồ sơ khẩu vị kiến trúc & tiêu chuẩn review Tech Lead
-│   └── tech_lead_profile.yaml                     # Cấu hình tiêu chuẩn review, stack & guardrails
-├── examples/                                      # Kho dự án mẫu tham chiếu kiến trúc chuẩn (Golden Reference)
-│   └── motocare_reference/                        # Tham chiếu Clean Architecture, FastAPI repo, React Native
-├── scripts/                                       # Bộ công cụ tự động hóa Day-0 & Release
+├── config/                                        # Hồ sơ khẩu vị kiến trúc & điều phối mô hình AI
+│   ├── tech_lead_profile.yaml                     # Cấu hình tiêu chuẩn review, stack & guardrails
+│   └── model_router.yaml                          # Ma trận phân bổ mô hình AI & tối ưu 65-75% token
+├── examples/                                      # Kho dự án mẫu & đề bài thực chiến (Golden Reference)
+│   ├── motocare_reference/                        # Tham chiếu Clean Architecture, FastAPI repo, React Native
+│   └── sample_client_brief.md                     # Bản đề bài mẫu từ khách hàng để thử nghiệm Day-0
+├── scripts/                                       # Bộ công cụ tự động hóa Day-0, Snapshot & Release
 │   ├── smoke_test.py                              # Smoke test tự động 5 tầng 1-click
+│   ├── snapshot.py                                # Chụp nhanh mã nguồn & khôi phục an toàn (Snapshot & Rollback)
 │   ├── bundle_release.py                          # Đóng gói zip, manifest, UAT checklist & manual
 │   ├── setup_frontend.py                          # Chuyển đổi Web Next.js 15 / Vite / Mobile Expo
 │   ├── verify_contracts.py                        # Kiểm tra đồng bộ schema 3 tầng
@@ -154,6 +159,7 @@ AI Team Dev/
 │       │       ├── test-report-template.md        # Template báo cáo QA & Structured Bug Tickets
 │       │       └── review-report-template.md      # Template thẩm định & Quality Scorecard
 │       ├── threat-modeling/SKILL.md               # Kỹ năng phân tích rủi ro STRIDE & OWASP API Top 10
+│       ├── secret-scanner/SKILL.md                # Kỹ năng rà soát rò rỉ API Keys & Database Credentials
 │       ├── ba-requirements/SKILL.md
 │       ├── db-sqlalchemy-alembic/SKILL.md
 │       ├── backend-fastapi/SKILL.md
